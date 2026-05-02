@@ -56,6 +56,7 @@ class RUI3node:
     def toggleCommandEcho(self):
         response, ok = checkSuccess(self, "ATE")
         log.info(f"{response} {ok:{"OK" if ok else "FAILED"}}")
+        return response
 
     def reset(self):
         response, ok = checkSuccess(self, "ATZ")
@@ -95,7 +96,7 @@ class RUI3node:
     def getATVersion(self):
         at_version = checkSuccess(self, "AT+CLIVER=?")
         log.info(f"{at_version} {ok:{"OK" if ok else "FAILED"}}")
-        return AT_version
+        return at_version
 
     def getAPIVersion(self):
         api_version = checkSuccess(self, "AT+APIVER=?")
