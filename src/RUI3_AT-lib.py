@@ -22,7 +22,7 @@ def checkSuccess(serial: serial.Serial, cmd: str, wait: float = 0.5):
     ok = "OK" in response
     status = "ok" if ok else "failed"
     log.info(f"{status}     {cmd} -> {response}")
-    return ok
+    return response, ok
 
 
 class RUI3node:
@@ -43,82 +43,86 @@ class RUI3node:
             self.ser.close()
             log.info("Serial port closed")
 
-    def Attention():
-        response = sendCommand(self, "AT",)
-        log.info(f"{response.strip()")
-
-    def help():
-        response = sendCommand(self, "AT?",)
-        log.info(f"{response.strip()")
-
-    def toggleCommandEcho():
-        response = sendCommand(self, "ATE")
-        log.info(f"{response.strip()")
-
-    def reset():
-        response = sendCommand(self, "ATZ")
-        log.info("Module reset")
-
-    def restoreDefault():
-        response = sendCommand(self, "ATR")
-        log.info("Restored default values")
-
-    def getSerialNumber():
-        serial_number = sendCommand(self, "AT+SN=?")
-        log.info(f"{serial_number}")
-        return serial_number
-
-    def getBatteryLevel():
-        battery_level = sendCommand(self, "AT+BAT")
-        log.info(f"{battery_level}")
-        return battery_level
-
-    def getBuildTime():
-        response = sendCommand(self, "AT+BUILDTIME=?")
-        log.info(f"{response}")
+    def Attention(self):
+        response, ok = checkSuccess(self, "AT",)
+        log.info(f"{response} {ok:{"OK" if ok else "FAILED"}}")
         return response
 
-    def getRepoInfo():
-        repo_info = sendCommand(self, "AT_REPOINFO=?")
-        log.info(f"{response}")
+    def help(self):
+        response, ok = checkSuccess(self, "AT?",)
+        log.info(f"{response} {ok:{"OK" if ok else "FAILED"}}")
+        return response
+
+    def toggleCommandEcho(self):
+        response, ok = checkSuccess(self, "ATE")
+        log.info(f"{response} {ok:{"OK" if ok else "FAILED"}}")
+
+    def reset(self):
+        response, ok = checkSuccess(self, "ATZ")
+        log.info(f"Module reset {response} {ok:{"OK" if ok else "FAILED"}}")
+        return response
+
+    def restoreDefault(self):
+        response, ok = checkSuccess(self, "ATR")
+        log.info(f"Restored default values {response}")
+        return response
+
+    def getSerialNumber(self):
+        serial_number, ok = checkSuccess(self, "AT+SN=?")
+        log.info(f"{serial_number} {ok:{"OK" if ok else "FAILED"}}")
+        return serial_number
+
+    def getBatteryLevel(self):
+        battery_level, ok = checkSuccess(self, "AT+BAT")
+        log.info(f"{battery_level} {ok:{"OK" if ok else "FAILED"}}")
+        return battery_level
+
+    def getBuildTime(self):
+        response, ok = checkSucces(self, "AT+BUILDTIME=?")
+        log.info(f"{response} {ok:{"OK" if ok else "FAILED"}}")
+        return response
+
+    def getRepoInfo(self):
+        repo_info = checkSuccess(self, "AT_REPOINFO=?")
+        log.info(f"{response} {ok:{"OK" if ok else "FAILED"}}")
         return repo_info
 
-    def getFirmVersion():
-        firmware_version = sendCommand(self, "AT+VER=?")
-        log.info(f"{firmware_version}")
+    def getFirmVersion(self):
+        firmware_version = checkSuccess(self, "AT+VER=?")
+        log.info(f"{firmware_version} {ok:{"OK" if ok else "FAILED"}}")
         return firmware_version
 
-    def getATVersion():
-        AT_version = sendCommand(self, "AT+CLIVER=?")
-        log.info(f"{AT_version}")
+    def getATVersion(self):
+        at_version = checkSuccess(self, "AT+CLIVER=?")
+        log.info(f"{at_version} {ok:{"OK" if ok else "FAILED"}}")
         return AT_version
 
-    def getAPIVersion():
-        API_version = sendCommand(self, "AT+APIVER=?")
-        log.info(f"{API_version}")
-        return API_version
+    def getAPIVersion(self):
+        api_version = checkSuccess(self, "AT+APIVER=?")
+        log.info(f"{api_version} {ok:{"OK" if ok else "FAILED"}}")
+        return api_version
 
-    def getHWModel():
-        hardware_model = sendCommand(self, "AT+HWMODEL=?")
-        log.info(f"{hardware_model}")
+    def getHWModel(self):
+        hardware_model = checkSuccess(self, "AT+HWMODEL=?")
+        log.info(f"{hardware_model} {ok:{"OK" if ok else "FAILED"}}")
         return hardware_model
 
-    def getHWID():
-        hardware_ID = sendCommand(self, "AT+HWID=?")
-        log.info(f"{hardware_ID}")
+    def getHWID(self):
+        hardware_ID = checkSuccess(self, "AT+HWID=?")
+        log.info(f"{hardware_ID} {ok:{"OK" if ok else "FAILED"}}")
         return hardware_ID
 
-    def getDeviceAlias():
-        device_alias = sendCommand(self, "AT+ALIAS=?")
-        log.info(f"{device_alias}")
+    def getDeviceAlias(self):
+        device_alias = checkSuccess(self, "AT+ALIAS=?")
+        log.info(f"{device_alias} {ok:{"OK" if ok else "FAILED"}}")
         return device_alias
 
     def setDeviceAlias(alias: str):
-        response = sendCommand(self, f"AT+ALIAS={alias}")
-        log.info(f"{response}")
+        response, ok = checkSuccess(self, f"AT+ALIAS={alias}")
+        log.info(f"{response} {ok:{"OK" if ok else "FAILED"}}")
         return response
 
-    def getSystemVoltage():
-        response = sendCommand(self, "AT+SYSV=?")
-        log.info(f"{response}")
+    def getSystemVoltage(self):
+        response, ok = checkSuccess(self, "AT+SYSV=?")
+        log.info(f"{response} {ok:{"OK" if ok else "FAILED"}}")
         return response
