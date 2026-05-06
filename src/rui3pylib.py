@@ -24,11 +24,11 @@ def checkSuccess(serial: serial.Serial, cmd: str, wait: float = 0.5):
     return response, ok
 
 
-class serialInterface:
-    def __init__(self, devPath: Optional[str]=None, connectNow: bool = False):
+class serialInterface(serial.Serial):
+    def __init__():
         pass
 
-class RUI3node:
+class RUI3node(serialInterface):
     def __init__ (self, port: str, baudrate: int = 115200, timeout: float = 3.0):
         self. port = port
         self.baudrate = baudrate
