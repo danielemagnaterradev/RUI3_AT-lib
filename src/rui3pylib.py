@@ -26,6 +26,12 @@ def checkSuccess(serial: serial.Serial, cmd: str, wait: float = 0.5):
 
 class serialInterface(serial.Serial):
     def __init__():
+        pass 
+
+    def connect():
+        pass
+
+    def close():
         pass
 
 class RUI3node(serialInterface):
