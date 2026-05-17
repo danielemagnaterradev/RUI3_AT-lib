@@ -26,11 +26,11 @@ def sendCommand(serial: serial.Serial, cmd: str, wait: float = 3.0):
         time.sleep(1.0)
 
     # Filter out firmware debug lines
-    filtered = "\n".join(
+    response = "\n".join(
         line for line in response.splitlines()
         if not line.startswith("[APP]")
     )
-    return filtered
+    return response
 
 
 def checkSuccess(serial: serial.Serial, cmd: str, wait: float = 3.0):
@@ -79,73 +79,90 @@ class RUI3node(serial.Serial):
 
     def attention(self):
         response, ok = checkSuccess(self, "AT")
-        return response
+        if ok:
+            return response
 
     def help(self):
         response, ok = checkSuccess(self, "AT?")
-        return response
+        if ok:
+            return response
 
     def toggleCommandEcho(self):
         response, ok = checkSuccess(self, "ATE")
-        return response
+        if ok:
+            return response
 
     def reset(self):
         response, ok = checkSuccess(self, "ATZ")
-        logging.info("Module reset")
-        return response
+        if ok:
+            logging.info("Module reset")
+            return response
 
     def restoreDefault(self):
         response, ok = checkSuccess(self, "ATR")
-        logging.info("Restored default values")
-        return response
+        if ok:
+            logging.info("Restored default values")
+            return response
 
     def getSerialNumber(self):
-        serial_number, ok = checkSuccess(self, "AT+SN=?")
-        return serial_number
+        response, ok = checkSuccess(self, "AT+SN=?")
+        if ok:
+            return response
 
     def getBatteryLevel(self):
-        battery_level, ok = checkSuccess(self, "AT+BAT=?")
-        return battery_level
+        response, ok = checkSuccess(self, "AT+BAT=?")
+        if ok:
+            return response
 
     def getBuildTime(self):
         response, ok = checkSuccess(self, "AT+BUILDTIME=?")
-        return response
+        if ok:
+            return response
 
     def getRepoInfo(self):
-        repo_info, ok = checkSuccess(self, "AT+REPOINFO=?")
-        return repo_info
+        response, ok = checkSuccess(self, "AT+REPOINFO=?")
+        if ok:
+            return response
 
     def getFirmVersion(self):
-        firmware_version, ok = checkSuccess(self, "AT+VER=?")
-        return firmware_version
+        response, ok = checkSuccess(self, "AT+VER=?")
+        if ok:
+            return response
 
     def getATVersion(self):
-        at_version, ok = checkSuccess(self, "AT+CLIVER=?")
-        return at_version
+        response, ok = checkSuccess(self, "AT+CLIVER=?")
+        if ok:
+            return response
 
     def getAPIVersion(self):
-        api_version, ok = checkSuccess(self, "AT+APIVER=?")
-        return api_version
+        response, ok = checkSuccess(self, "AT+APIVER=?")
+        if ok:
+            return response
 
     def getHWModel(self):
-        hardware_model, ok = checkSuccess(self, "AT+HWMODEL=?")
-        return hardware_model
+        response, ok = checkSuccess(self, "AT+HWMODEL=?")
+        if ok:
+            return response
 
     def getHWID(self):
-        hardware_ID, ok = checkSuccess(self, "AT+HWID=?")
-        return hardware_ID
+        response, ok = checkSuccess(self, "AT+HWID=?")
+        if ok:
+            return response
 
     def getDeviceAlias(self):
-        device_alias, ok = checkSuccess(self, "AT+ALIAS=?")
-        return device_alias
+        response, ok = checkSuccess(self, "AT+ALIAS=?")
+        if ok:
+            return response
 
     def getSystemVoltage(self):
         response, ok = checkSuccess(self, "AT+SYSV=?")
-        return response
+        if ok:
+            return response
 
     def getBLEMac(self):
         response, ok = checkSuccess(self, "AT+BLEMAC=?")
-        return response
+        if ok:
+            return response
 
     def setBLEMac(self, mac: str):
         # the string MUST be 12 characters
@@ -154,11 +171,13 @@ class RUI3node(serial.Serial):
         else:
             mac = mac.ljust(12)
         response, ok = checkSuccess(self, f"AT+BLEMAC={mac}")
-        return response
+        if ok:
+            return response
 
     def getBootVer(self):
         response, ok = checkSuccess(self, "AT+BOOTVER=?")
-        return response
+        if ok:
+            return response
 
     ######################################
     ######### LOW POWER COMMANDS #########
@@ -167,11 +186,13 @@ class RUI3node(serial.Serial):
     def atSleep(self, time: int):
         # time is in milliseconds
         response, ok = checkSuccess(self, f"AT+SLEEP={time}")
-        return response
+        if ok:
+            return response
 
     def getLowPowerMode(self):
         response, ok = checkSuccess(self, "AT+LPM=?")
-        return response
+        if ok:
+            return response
 
     def setLowPowerMode(self, on: bool):
         if on is True:
@@ -179,7 +200,8 @@ class RUI3node(serial.Serial):
         else:
             mode = 0
         response, ok = checkSuccess(self, f"AT+LPM={mode}")
-        return response
+        if ok:
+            return response
 
     ######################################
     ######### SERIAL AT COMMANDS #########
@@ -192,7 +214,6 @@ class RUI3node(serial.Serial):
         response, ok = checkSuccess(self, "AT+LOCK")
         if ok:
             print(f"Serial port {self.port} is now locked")
-        else:
             return response
 
     def setPassword(self, password: str):
@@ -200,8 +221,8 @@ class RUI3node(serial.Serial):
             print("Password must be between 1 and 8 characters of length")
         else:
             response, ok = checkSuccess(self, f"AT+PWORD={password}")
-
-        return response
+            if ok:
+                return response
 
     #######################################
     ######### BOOTLOADER COMMANDS #########
@@ -214,29 +235,35 @@ class RUI3node(serial.Serial):
         # boot mode can be interrupted with the run method
         # AT_BUSY_ERROR is returned when the bootloader process is already running
         response, ok = checkSuccess(self, "AT+BOOT")
-        return response
+        if ok:
+            return response
 
     def getBootloadeVer(self):
         response, ok = checkSuccess(self, "AT+VER=?")
-        return response
+        if ok:
+            return response
 
     def getBootloadeStatus(self):
         response, ok = checkSuccess(self, "AT+BOOTSTATUS")
-        return response
+        if ok:
+            return response
 
     def atRun(self):
         # This methods makes the device leave boot mode and boots into the application
         response, ok = checkSuccess(self, "AT+RUN")
-        return response
+        if ok:
+            return response
 
     def bootReset(self):
         response, ok = checkSuccess(self, "AT+RESET")
-        return response
+        if ok:
+            return response
 
     def bootUpdate(self):
         # Starts Y-modem receiving process
         response, ok = checkSuccess(self, "AT+UPDATE")
-        return response
+        if ok:
+            return response
 
     #######################################
     ######### LORAWAN KEYS AND ID #########
@@ -244,13 +271,15 @@ class RUI3node(serial.Serial):
 
     def getDeviceEUI(self):
         response, ok = checkSuccess(self, "AT+DEVEUI=?")
-        return response
+        if ok:
+            return response
 
     def setDeviceEui(self, deveui: str):
         # Check if the string is comprised of precisely 16 hexdigits
         if all(char in string.hexdigits for char in deveui) and len(deveui) == 16:
             response, ok = checkSuccess(self, f"AT+DEVEUI={deveui}")
-            return response
+            if ok:
+                return response
         else:
             # String is malformed and will return AT_PARAM_ERROR
             logging.info("AT_PARAM_ERROR")
@@ -261,75 +290,88 @@ class RUI3node(serial.Serial):
 
     def getAppEUI(self):
         response, ok = checkSuccess(self, "AT+APPEUI=?")
-        return response
+        if ok:
+            return response
 
     def setAppEUI(self, appeui: str):
         if all(char in string.hexdigits for char in appeui) and len(appeui) == 16:
             response, ok = checkSuccess(self, f"AT+APPEUI={appeui}")
-            return response
+            if ok:
+                return response
         else:
             logging.info("AT_PARAM_ERROR")
 
     def getAppKey(self):
         response, ok = checkSuccess(self, "AT+APPKEY=?")
-        return response
+        if ok:
+            return response
 
     def setAppKey(self, appkey: str):
         # Must be 32 hexdigits
         if all(char in string.hexdigits for char in appkey) and len(appkey) == 32:
             response, ok = checkSuccess(self, f"AT+APPKEY={appkey}")
-            return response
+            if ok:
+                return response
         else:
             logging.info("AT_PARAM_ERROR")
 
     def getDevAddr(self):
         response, ok = checkSuccess(self, "AT+DEVADDR=?")
-        return response
+        if ok:
+            return response
 
     def setDevAddr(self, devaddr: str):
         # Must be 4 hexdigits
         if all(char in string.hexdigits for char in devaddr) and len(devaddr) == 4:
-            response, ok = checkSuccess(self, f"AT+APPKEY={devaddr}")
-            return response
+            response, ok = checkSuccess(self, f"AT+DEVADDR={devaddr}")
+            if ok:
+                return response
         else:
             logging.info("AT_PARAM_ERROR")
 
     def getAppSKey(self):
         response, ok = checkSuccess(self, "AT+APPSKEY=?")
-        return response
+        if ok:
+            return response
 
     def setAppSKey(self, appskey: str):
         # Must be 32 hexdigits
         if all(char in string.hexdigits for char in appskey) and len(appskey) == 32:
             response, ok = checkSuccess(self, f"AT+APPSKEY={appskey}")
-            return response
+            if ok:
+                return response
         else:
             logging.info("AT_PARAM_ERROR")
 
     def getNetworkSKey(self):
         response, ok = checkSuccess(self, "AT+NWKSKEY=?")
-        return response
+        if ok:
+            return response
 
     def setNetworkSKey(self, netskey: str):
         # Must be 32 hexdigits
         if all(char in string.hexdigits for char in netskey) and len(netskey) == 32:
-            response, ok = checkSuccess(self, f"AT+APPSKEY={netskey}")
-            return response
+            response, ok = checkSuccess(self, f"AT+NWKSKEY={netskey}")
+            if ok:
+                return response
         else:
             logging.info("AT_PARAM_ERROR")
 
     def getNetworkID(self):
         response, ok = checkSuccess(self, "AT+NETID=?")
-        return response
+        if ok:
+            return response
 
     def setNetworkID(self, netid: str):
         # Must be 6 hexdigits
         if all(char in string.hexdigits for char in netid) and len(netid) == 6:
-            response, ok = checkSuccess(self, f"AT+APPSKEY={netid}")
-            return response
+            response, ok = checkSuccess(self, f"AT+NETID={netid}")
+            if ok:
+                return response
         else:
             logging.info("AT_PARAM_ERROR")
 
     def getMulticastRootKey(self):
         response, ok = checkSuccess(self, "AT+MCROOTKEY=?")
-        return response
+        if ok:
+            return response
