@@ -141,3 +141,4 @@ class RUI3node(serial.Serial):
     def getSystemVoltage(self):
         response, ok = checkSuccess(self, "AT+SYSV=?")
         return response
+
