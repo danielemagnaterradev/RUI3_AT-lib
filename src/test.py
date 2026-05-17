@@ -1,11 +1,11 @@
 import rui3pylib
-import time
 
-rui3 = rui3pylib.RUI3node("COM1")
+iface = rui3pylib.RUI3node()
 
-rui3.connect()
+iface.attention()
+iface.getSerialNumber()
+iface.getDeviceAlias()
+iface.getFirmVersion()
+iface.getAPIVersion()
 
-time.sleep(5)
-
-rui3.close()
-
+iface.tryClose()
