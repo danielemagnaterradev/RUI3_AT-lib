@@ -134,10 +134,6 @@ class RUI3node(serial.Serial):
         device_alias, ok = checkSuccess(self, "AT+ALIAS=?")
         return device_alias
 
-    def setDeviceAlias(self, alias: str):
-        response, ok = checkSuccess(self, f"AT+ALIAS={alias}")
-        return response
-
     def getSystemVoltage(self):
         response, ok = checkSuccess(self, "AT+SYSV=?")
         return response
