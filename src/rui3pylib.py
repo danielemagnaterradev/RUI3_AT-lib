@@ -224,7 +224,7 @@ class RUI3node(serial.Serial):
         # The default password is 00000000
         # You can change the password with the setPassword method
         # The command doesn't return OK
-        response, ok = checkSuccess(self, "AT+LOCK")
+        _ = sendCommand(self, "AT+LOCK")
         print(f"Serial port {self.port} is now locked")
 
     def setPassword(self, password: str):
