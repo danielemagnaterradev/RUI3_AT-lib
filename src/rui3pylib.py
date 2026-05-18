@@ -40,6 +40,10 @@ def checkSuccess(serial: serial.Serial, cmd: str, wait: float = 3.0):
     logging.info(f"[{_status(ok)}] {cmd}" + (f" -> {clean}" if clean else ""))
     return response, ok
 
+# This class contains all of the RUI3 commands as methods.
+# When initialized, it will try to connect automatically and, if a port was not directly passed,
+# it will automatically find the RUI3 compatible device for you.
+
 
 class RUI3node(serial.Serial):
     def __init__(self, port: str | None = None, baudrate: int = 115200, timeout: float = 3.0):
@@ -61,6 +65,17 @@ class RUI3node(serial.Serial):
                     logging.info(f"SerialException on {self.port}: {e}")
                     if self.is_open:
                         self.close()
+        else:
+            try:
+                self.open()
+                if self.tryConnect():
+                    logging.info(f"Connected to port {self.port}")
+                else:
+                    self.close()
+            except serial.serialutil.SerialException as e:
+                logging.info(f"SerialException on {self.port}: {e}")
+                if self.is_open:
+                    self.close()
 
     def tryConnect(self):
         try:
