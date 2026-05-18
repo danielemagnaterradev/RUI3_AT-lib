@@ -64,7 +64,7 @@ class RUI3node(serial.Serial):
 
     def tryConnect(self):
         try:
-            response, ok = checkSuccess(self, "AT", 5.0)
+            _, ok = checkSuccess(self, "AT", 5.0)
             return ok
         except serial.serialutil.PortNotOpenError:
             logging.info("Port not open")
