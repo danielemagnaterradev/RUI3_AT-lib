@@ -321,8 +321,8 @@ class RUI3node(serial.Serial):
             return response
 
     def setDevAddr(self, devaddr: str):
-        # Must be 4 hexdigits
-        if all(char in string.hexdigits for char in devaddr) and len(devaddr) == 4:
+        # Must be 8 hexdigits
+        if all(char in string.hexdigits for char in devaddr) and len(devaddr) == 8:
             response, ok = checkSuccess(self, f"AT+DEVADDR={devaddr}")
             if ok:
                 return response
