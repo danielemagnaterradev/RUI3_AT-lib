@@ -225,11 +225,11 @@ class RUI3node(serial.Serial):
         # You can change the password with the setPassword method
         # The command doesn't return OK
         _ = sendCommand(self, "AT+LOCK")
-        print(f"Serial port {self.port} is now locked")
+        logging.info(f"Serial port {self.port} is now locked")
 
     def setPassword(self, password: str):
         if len(password) < 1 or len(password) > 8:
-            print("Password must be between 1 and 8 characters of length")
+            logging.info("Password must be between 1 and 8 characters of length")
         else:
             response, ok = checkSuccess(self, f"AT+PWORD={password}")
             if ok:
