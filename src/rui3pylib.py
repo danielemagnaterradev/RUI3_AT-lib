@@ -85,9 +85,6 @@ class RUI3node(serial.Serial):
             logging.info("Port not open")
             return False
 
-    def tryClose(self):
-        super().close()
-
     #####################################
     ######### GENERAL COMMANDS ##########
     #####################################
@@ -226,10 +223,9 @@ class RUI3node(serial.Serial):
         # This method locks the serial port and it will require a password to access it
         # The default password is 00000000
         # You can change the password with the setPassword method
+        # The command doesn't return OK
         response, ok = checkSuccess(self, "AT+LOCK")
-        if ok:
-            print(f"Serial port {self.port} is now locked")
-            return response
+        print(f"Serial port {self.port} is now locked")
 
     def setPassword(self, password: str):
         if len(password) < 1 or len(password) > 8:
@@ -243,7 +239,7 @@ class RUI3node(serial.Serial):
     ######### BOOTLOADER COMMANDS #########
     #######################################
 
-    # These methods, with the exception of the first, one only work in boot mode
+    # These methods, with the exception of the first one, only work in boot mode
 
     def setBootMode(self):
         # This method sets the device in boot mode
