@@ -375,3 +375,28 @@ class RUI3node(serial.Serial):
         response, ok = checkSuccess(self, "AT+MCROOTKEY=?")
         if ok:
             return response
+
+
+    ###############################################
+    ######### LORAWAN JOINING AND SENDING #########
+    ###############################################
+
+
+    def setConfirmMode(self, on: bool):
+        # This method is used to configure the uplink payload to be confirmed or unconfirmed type
+        if on is True:
+            mode = 1
+        else:
+            mode = 0
+
+        response, ok = checkSuccess(self, "AT+CFM={mode}")
+        if ok:
+            return response
+
+    def getConfirmStatus(self):
+        # This command is used to access the status of the last SEND command
+        response, ok = checkSuccess(self, "AT+CFS=?")
+        if ok:
+                return response
+
+    
