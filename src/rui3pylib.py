@@ -407,3 +407,43 @@ class RUI3node(serial.Serial):
         response, ok = checkSuccess(self, "AT+CFS=?")
         if ok:
             return response
+
+    def getJoinParams(self):
+        response, ok = checkSuccess(self, f"AT+JOIN=?")
+        if ok: 
+            return response
+
+    def tryJoin(self, join: bool = True, auto_join : bool = False, interval: int = 8, join_attempts: int = 0):
+        # paramaters are formatted like *:*:*:*
+        # if nothing is passed, default values will be used
+        # The command is asynchronous and it will return OK if the device is joining
+        # The completion of the join can be verified with the getNetworkJoinStatus method
+        param1 = 1 if join else 0
+        param2 = 1 if auto_join else 0
+        if interval < 7 or interval > 255:
+            logging.info("Reattempt value must be within 7 and 255")
+        if join_attempts < 0 and join_attempts > 255:
+            logging.info("No. of join attempts must be within 0 and 255")
+        response, ok = checkSuccess(self, f"AT+JOIN={param1}:{param2}:{interval}:{join_attempts}")
+        if ok:
+            return response
+
+    def getNetworkJoinMode(self):
+        response, ok = checkSuccess(self, "AT+NJM=?")
+        if ok:
+            return response
+
+    def setNetworkJoinMode(self, mode: int = 0):
+        # 0 = ABP mode
+        # 1 = OTAA mode
+        if mode not 0 or mode not 1:
+            logging.info("Parameter must be either 0 (ABP) or 1 (OTAA)")
+
+        response, ok = checkSuccess(self, f"AT+NJM={mode}")
+        if ok:
+            return response
+
+    def getNetworkJoinStatus(self):
+        response, ok = checkSuccess(self, "AT+NJS=?")
+        if ok:
+            return response
