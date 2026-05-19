@@ -179,7 +179,9 @@ class RUI3node(serial.Serial):
     def setBLEMac(self, mac: str):
         # the string MUST be 12 characters
         if all(char in string.hexdigits for char in mac) and len(mac) == 12:
-            response, ok = checkSuccess(self, f"AT+BLEMAC={mac}")
+            # forcing correct mac formatting from an unformatted hexstring
+            formatted = re.sub(f"(.{{{2}}})", f"\\1{":"}", mac)
+            response, ok = checkSuccess(self, f"AT+BLEMAC={formatted[:-1].lower()}")
             if ok:
                 return response
 
