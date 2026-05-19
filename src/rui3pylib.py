@@ -178,13 +178,10 @@ class RUI3node(serial.Serial):
 
     def setBLEMac(self, mac: str):
         # the string MUST be 12 characters
-        if len(mac) > 12:
-            mac = mac[:12]
-        else:
-            mac = mac.ljust(12)
-        response, ok = checkSuccess(self, f"AT+BLEMAC={mac}")
-        if ok:
-            return response
+        if all(char in string.hexdigits for char in mac) and len(mac) == 12:
+            response, ok = checkSuccess(self, f"AT+BLEMAC={mac}")
+            if ok:
+                return response
 
     def getBootVer(self):
         response, ok = checkSuccess(self, "AT+BOOTVER=?")
