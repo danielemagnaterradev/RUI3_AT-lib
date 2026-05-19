@@ -413,13 +413,17 @@ class RUI3node(serial.Serial):
         # if nothing is passed, default values will be used
         # The command is asynchronous and it will return OK if the device is joining
         # The completion of the join can be verified with the getNetworkJoinStatus method
-        param1 = 1 if join else 0
-        param2 = 1 if auto_join else 0
+        # Join = 1 for joining the network, 0 for stop joining
+        join_bin = 1 if join else 0
+        # Auto_join = 1 for auto-join on power-up, 0 for no aut-join
+        auto_join_bin = 1 if auto_join else 0
+        # Reattempt interval in second, default is 8
         if interval < 7 or interval > 255:
             logging.info("Reattempt value must be within 7 and 255")
+        # No. of join attempts, must be within 0 and 255
         if join_attempts < 0 and join_attempts > 255:
             logging.info("No. of join attempts must be within 0 and 255")
-        response, ok = checkSuccess(self, f"AT+JOIN={param1}:{param2}:{interval}:{join_attempts}")
+        response, ok = checkSuccess(self, f"AT+JOIN={join_bin}:{auto_join_bin}:{interval}:{join_attempts}")
         if ok:
             return response
 
