@@ -209,10 +209,7 @@ class RUI3node(serial.Serial):
             return response
 
     def setLowPowerMode(self, on: bool):
-        if on is True:
-            mode = 1
-        else:
-            mode = 0
+        mode = 1 if on else 0
         response, ok = checkSuccess(self, f"AT+LPM={mode}")
         if ok:
             return response
