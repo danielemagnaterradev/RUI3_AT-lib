@@ -435,7 +435,7 @@ class RUI3node(serial.Serial):
     def setNetworkJoinMode(self, mode: int = 0):
         # 0 = ABP mode
         # 1 = OTAA mode
-        if mode not 0 or mode not 1:
+        if mode != 0 or mode != 1:
             logging.info("Parameter must be either 0 (ABP) or 1 (OTAA)")
         else:
             response, ok = checkSuccess(self, f"AT+NJM={mode}")
