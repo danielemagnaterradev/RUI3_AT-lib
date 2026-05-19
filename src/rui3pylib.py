@@ -182,7 +182,8 @@ class RUI3node(serial.Serial):
         if all(char in string.hexdigits for char in mac) and len(mac) == 12:
             # forcing correct mac formatting from an unformatted hexstring
             formatted = re.sub(f"(.{{{2}}})", f"\\1{":"}", mac)
-            response, ok = checkSuccess(self, f"AT+BLEMAC={formatted[:-1].lower()}")
+            response, ok = checkSuccess(
+                self, f"AT+BLEMAC={formatted[:-1].lower()}")
             if ok:
                 return response
         else:
@@ -228,7 +229,8 @@ class RUI3node(serial.Serial):
 
     def setPassword(self, password: str):
         if len(password) < 1 or len(password) > 8:
-            logging.info("Password must be between 1 and 8 characters of length")
+            logging.info(
+                "Password must be between 1 and 8 characters of length")
         else:
             response, ok = checkSuccess(self, f"AT+PWORD={password}")
             if ok:
@@ -404,11 +406,11 @@ class RUI3node(serial.Serial):
             return response
 
     def getJoinParams(self):
-        response, ok = checkSuccess(self, f"AT+JOIN=?")
-        if ok: 
+        response, ok = checkSuccess(self, "AT+JOIN=?")
+        if ok:
             return response
 
-    def tryJoin(self, join: bool = True, auto_join : bool = False, interval: int = 8, join_attempts: int = 0):
+    def tryJoin(self, join: bool = True, auto_join: bool = False, interval: int = 8, join_attempts: int = 0):
         # paramaters are formatted like *:*:*:*
         # if nothing is passed, default values will be used
         # The command is asynchronous and it will return OK if the device is joining
@@ -423,7 +425,8 @@ class RUI3node(serial.Serial):
         # No. of join attempts, must be within 0 and 255
         if join_attempts < 0 and join_attempts > 255:
             logging.info("No. of join attempts must be within 0 and 255")
-        response, ok = checkSuccess(self, f"AT+JOIN={join_bin}:{auto_join_bin}:{interval}:{join_attempts}")
+        response, ok = checkSuccess(
+            self, f"AT+JOIN={join_bin}:{auto_join_bin}:{interval}:{join_attempts}")
         if ok:
             return response
 
