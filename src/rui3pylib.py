@@ -392,11 +392,7 @@ class RUI3node(serial.Serial):
 
     def setConfirmMode(self, on: bool):
         # This method is used to configure the uplink payload to be confirmed or unconfirmed type
-        if on is True:
-            mode = 1
-        else:
-            mode = 0
-
+        mode = 1 if on else 0
         response, ok = checkSuccess(self, f"AT+CFM={mode}")
         if ok:
             return response
