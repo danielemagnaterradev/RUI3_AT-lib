@@ -90,7 +90,7 @@ class RUI3node(serial.Serial):
     ######### GENERAL COMMANDS ##########
     #####################################
 
-    def attention(self):
+    def ping(self):
         response, ok = checkSuccess(self, "AT")
         if ok:
             return response
