@@ -185,6 +185,8 @@ class RUI3node(serial.Serial):
             response, ok = checkSuccess(self, f"AT+BLEMAC={formatted[:-1].lower()}")
             if ok:
                 return response
+        else:
+            logging.info("invalid format: it should be like 00:11:22:33:44:55")
 
     def getBootVer(self):
         response, ok = checkSuccess(self, "AT+BOOTVER=?")
