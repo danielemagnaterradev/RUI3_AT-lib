@@ -186,7 +186,7 @@ class RUI3node(serial.Serial):
             if ok:
                 return response
         else:
-            logging.info("invalid format: it should be like 00:11:22:33:44:55")
+            logging.info("invalid format: it should be like 001122334455")
 
     def getBootVer(self):
         response, ok = checkSuccess(self, "AT+BOOTVER=?")
