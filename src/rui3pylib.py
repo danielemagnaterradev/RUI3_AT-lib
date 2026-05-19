@@ -248,12 +248,12 @@ class RUI3node(serial.Serial):
         if ok:
             return response
 
-    def getBootloadeVer(self):
+    def getBootloaderVer(self):
         response, ok = checkSuccess(self, "AT+VER=?")
         if ok:
             return response
 
-    def getBootloadeStatus(self):
+    def getBootloaderStatus(self):
         response, ok = checkSuccess(self, "AT+BOOTSTATUS")
         if ok:
             return response
