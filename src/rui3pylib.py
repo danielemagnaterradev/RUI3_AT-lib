@@ -473,7 +473,7 @@ class RUI3node(serial.Serial):
         else:
             logging.info("Invalid payload format")
 
-    def sendLongPacketData(self, port:int, ack: bool, payload: str):
+    def sendLongPacketData(self, port: int, ack: bool, payload: str):
         # Same as above except the packet can be up to 1000 bytes long
         # This is an asynchronous command and will return OK when the device starts to send
         # Long Packet mode only works for uplink packets. Downlink packet cannot have the long packet data format
@@ -482,7 +482,8 @@ class RUI3node(serial.Serial):
             logging.info("Invalid port")
         if all(char in string.hexdigits for char in payload):
             if len(payload) > 2 and len(payload) < 2000 and len(payload) % 2 == 0:
-                response, ok = checkSuccess(self, f"AT+LPSEND={port}:{ack_bool}:{payload}")
+                response, ok = checkSuccess(
+                    self, f"AT+LPSEND={port}:{ack_bool}:{payload}")
                 if ok:
                     return response
             else:
