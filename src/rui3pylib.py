@@ -463,15 +463,16 @@ class RUI3node(serial.Serial):
         # 1 to 256 hexadecimal numbers
         if port < 1 or port > 233:
             logging.info("Invalid port")
-        if all(char in string.hexdigits for char in payload):
-            if len(payload) > 2 and len(payload) < 500 and len(payload) % 2 == 0:
-                response, ok = checkSuccess(self, f"AT+SEND={port}:{payload}")
-                if ok:
-                    return response
-            else:
-                logging.info("Invalid payload size")
         else:
-            logging.info("Invalid payload format")
+            if all(char in string.hexdigits for char in payload):
+                if len(payload) > 2 and len(payload) < 500 and len(payload) % 2 == 0:
+                    response, ok = checkSuccess(self, f"AT+SEND={port}:{payload}")
+                    if ok:
+                        return response
+                else:
+                    logging.info("Invalid payload size")
+            else:
+                logging.info("Invalid payload format")
 
     def sendLongPacketData(self, port: int, ack: bool, payload: str):
         # Same as above except the packet can be up to 1000 bytes long
@@ -480,16 +481,17 @@ class RUI3node(serial.Serial):
         ack_bool = 1 if ack else 0
         if port < 1 or port > 233:
             logging.info("Invalid port")
-        if all(char in string.hexdigits for char in payload):
-            if len(payload) > 2 and len(payload) < 2000 and len(payload) % 2 == 0:
-                response, ok = checkSuccess(
-                    self, f"AT+LPSEND={port}:{ack_bool}:{payload}")
-                if ok:
-                    return response
-            else:
-                logging.info("Invalid payload size")
         else:
-            logging.info("Invalid payload format")
+            if all(char in string.hexdigits for char in payload):
+                if len(payload) > 2 and len(payload) < 2000 and len(payload) % 2 == 0:
+                    response, ok = checkSuccess(
+                        self, f"AT+LPSEND={port}:{ack_bool}:{payload}")
+                    if ok:
+                        return response
+                else:
+                    logging.info("Invalid payload size")
+            else:
+                logging.info("Invalid payload format")
 
     def setConfirmPacketRetransmission(self, tries: int):
         # Sets the number of of retries for confirm packets
