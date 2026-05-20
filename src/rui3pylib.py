@@ -504,3 +504,7 @@ class RUI3node(serial.Serial):
         response, ok = checkSuccess(self, "AT+RETY=?")
         if ok:
             return response
+
+    ###############################################
+    ######### LORAWAN Network Management ##########
+    ###############################################
