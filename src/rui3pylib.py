@@ -475,6 +475,8 @@ class RUI3node(serial.Serial):
 
     def sendLongPacketData(self, port:int, ack: bool, payload: str):
         # Same as above except the packet can be up to 1000 bytes long
+        # This is an asynchronous command and will return OK when the device starts to send
+        # Long Packet mode only works for uplink packets. Downlink packet cannot have the long packet data format
         ack_bool = 1 if ack else 0
         if port < 1 or port > 233:
             logging.info("Invalid port")
