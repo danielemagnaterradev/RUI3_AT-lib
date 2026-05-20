@@ -449,3 +449,44 @@ class RUI3node(serial.Serial):
         response, ok = checkSuccess(self, "AT+NJS=?")
         if ok:
             return response
+
+    def getLastReceivedData(self):
+        # This command returns the last received data alog with the port it was received from
+        # Format is like <port>:<payload><CR><LR>
+        response, ok = checkSuccess(self, "AT+RECV=?")
+        if ok:
+            return response
+
+    def sendData(self, port: int, payload: str):
+        # Port number must be within 1 and 233
+        # Payload must  be within 2 and 500 digit length, to represent
+        # 1 to 256 hexadecimal numbers
+        if port < 1 or port > 233:
+            logging.info("Invalid port")
+        if all(char in string.hexdigits for char in payload):
+            if len(payload) > 2 and len(payload) < 500 and len(payload) % 2 == 0:
+                response, ok = checkSuccess(self, f"AT+SEND={port}:{payload}")
+                if ok:
+                    return response
+            else:
+                logging.info("Invalid payload size")
+        else:
+            logging.info("Invalid payload format")
+
+    def sendLongPacketData(self, port:int, ack: bool, payload: str):
+        # Same as above except the packet can be up to 1000 bytes long
+        ack_bool = 1 if ack else 0
+        if port < 1 or port > 233:
+            logging.info("Invalid port")
+        if all(char in string.hexdigits for char in payload):
+            if len(payload) > 2 and len(payload) < 2000 and len(payload) % 2 == 0:
+                response, ok = checkSuccess(self, f"AT+LPSEND={port}:{ack_bool}:{payload}")
+                if ok:
+                    return response
+            else:
+                logging.info("Invalid payload size")
+        else:
+            logging.info("Invalid payload format")
+
+
+
