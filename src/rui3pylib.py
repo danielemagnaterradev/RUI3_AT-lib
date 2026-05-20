@@ -490,5 +490,17 @@ class RUI3node(serial.Serial):
         else:
             logging.info("Invalid payload format")
 
+    def setConfirmPacketRetransmission(self, tries: int):
+        # Sets the number of of retries for confirm packets
+        # must be within 0 and 7
+        if tries < 0 or tries > 7:
+            logging.info("Invalid number: must be within 0 and 7")
+        else:
+            response, ok = checkSuccess(self, f"AT+RETY={tries}")
+            if ok:
+                return response
 
-
+    def getConfirmPacketRetransmission(self):
+        response, ok = checkSuccess(self, "AT+RETY=?")
+        if ok:
+            return response
