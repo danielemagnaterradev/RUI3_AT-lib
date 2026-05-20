@@ -417,7 +417,7 @@ class RUI3node(serial.Serial):
         # The completion of the join can be verified with the getNetworkJoinStatus method
         # Join = 1 for joining the network, 0 for stop joining
         join_bin = 1 if join else 0
-        # Auto_join = 1 for auto-join on power-up, 0 for no aut-join
+        # Auto_join = 1 for auto-join on power-up, 0 for no auto-join
         auto_join_bin = 1 if auto_join else 0
         # Reattempt interval in second, default is 8
         if interval < 7 or interval > 255:
@@ -459,8 +459,7 @@ class RUI3node(serial.Serial):
 
     def sendData(self, port: int, payload: str):
         # Port number must be within 1 and 233
-        # Payload must  be within 2 and 500 digit length, to represent
-        # 1 to 256 hexadecimal numbers
+        # Payload must  be within 2 and 500 digit length, to represent 1 to 256 hexadecimal numbers
         if port < 1 or port > 233:
             logging.info("Invalid port")
         else:
