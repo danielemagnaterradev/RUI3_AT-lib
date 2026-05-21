@@ -465,7 +465,8 @@ class RUI3node(serial.Serial):
         else:
             if all(char in string.hexdigits for char in payload):
                 if len(payload) > 2 and len(payload) < 500 and len(payload) % 2 == 0:
-                    response, ok = checkSuccess(self, f"AT+SEND={port}:{payload}")
+                    response, ok = checkSuccess(
+                        self, f"AT+SEND={port}:{payload}")
                     if ok:
                         return response
                 else:
@@ -512,7 +513,7 @@ class RUI3node(serial.Serial):
     ###############################################
 
     def getAdaptiveRate(self):
-        response, ok = cheà(self, "AT+ADR=?")
+        response, ok = checkSuccess(self, "AT+ADR=?")
         if ok:
             return response
 
@@ -529,7 +530,7 @@ class RUI3node(serial.Serial):
 
     def setLorawanClass(self, lorawan_class: str):
         # The value of class must be either A, B or C
-        if lorawan_class != "A" and lorawan_class != "B" and lorawan_class "C":
+        if lorawan_class != "A" and lorawan_class != "B" and lorawan_class != "C":
             logging.info("LoRaWAN class must be either A, B or C")
         else:
             response, ok = checkSuccess(self, f"AT+CLASS={lorawan_class}")
