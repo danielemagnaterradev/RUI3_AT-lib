@@ -597,3 +597,145 @@ class RUI3node(serial.Serial):
             response, ok = checkSuccess(self, f"AT+JN2DL={value}")
             if ok:
                 return response
+
+    def getPublicNetworkMode(self):
+        response, ok = checkSuccess(self, "AT+PNM=?")
+        if ok:
+            return response
+
+    def setPublicNetworkMode(self, on: bool):
+        mode = 1 if on else 0
+        response, ok = checkSuccess(self, f"AT+PNM={mode}")
+        if ok:
+            return response
+
+    def getReceiveWindow1Delay(self):
+        response, ok = checkSuccess(self, "AT+RX1DL=?")
+        if ok:
+            return response
+
+    def setReceiveWindow1Delay(self, value: int):
+        if value < 1 or value > 15:
+            logging.info("Value must be between 1 and 15")
+        else:
+            response, ok = checkSuccess(self, f"AT+RX1DL={value}")
+            if ok:
+                return response
+
+    def getReceiveWindow2Delay(self):
+        response, ok = checkSuccess(self, "AT+RX2DL=?")
+        if ok:
+            return response
+
+    def setReceiveWindow2Delay(self. value: int):
+        if value < 2 or value > 15:
+            logging.info("Value must be between 2 and 15")
+        else:
+            response, ok = checkSuccess(self, f"AT+RX2DL={value}")
+            if ok:
+                return response
+
+    def getReceiveWindow2DataRate(self):
+        response, ok = checkSuccess(self, "AT+RX2DR=?")
+        if ok:
+            return response
+
+    def setReceiveWindow2DataRate(self, value: int):
+        # Be careful with your geographical location since some locations have entirely different data rates possible
+        if value < 0 or value > 13:
+            logging.info("Value must be between 0 and 13")
+        else:
+            response, ok = checkSuccess(self, f"AT+RX2DR={value}")
+            if ok:
+                return response
+
+    def getReceiveWindow2Freq(self):
+        response, ok = checkSuccess(self, "AT+RX2FQ=?")
+        if ok:
+            return response
+
+    def setReceiveWindow2Freq(self, freq: int):
+        # This is the receive frequency in Hz
+        response, ok = checkSuccess(self, f"AT+RX2FQ={freq}")
+        if ok: 
+            return response
+
+    def getTransmitPower(self):
+        response, ok = checkSuccess(self, "AT+TXP=?")
+        if ok:
+            return response
+
+    def setTransmitPower(self, value: int):
+        # Be careful with your country's regulation
+        if value < 0 or value > 14:
+            logging.info("Value must between 0 and 14")
+        else:
+            response, ok = checkSuccess(self, f"AT+TXP={value}")
+            if ok:
+                return response
+
+    def getLinkCheck(self):
+        response, ok = checkSuccess(self, "AT+LINKCHECK=?")
+        if ok:
+            return response
+
+    def setLinkCheck(self, value: int):
+        # 0 - Disable link check
+        # 1 - Execute link check just once on the next payload uplink
+        # 2 - Module will automatically execute one-time link check after every payload uplink
+        if value != 0 and value != 1 and value != 2:
+            logging.info("Value must be either 0, 1 or 2")
+        else:
+            response, ok = checkSuccess(self, f"AT+LINKCHECK={value}")
+            if ok:
+                return response
+
+    def getListenBeforeTalk(self):
+        response, ok = checkSuccess(self, "AT+LBT=?")
+        if ok:
+            return response
+
+    def setListenBeforeTalk(self, on: bool):
+        mode = 1 if on else 0
+        response, ok = checkSuccess(self, f"AT+LBT={mode}")
+        if ok:
+            return response
+
+    def getListenBeforeTalkRSSI(self):
+        response, ok = checkSuccess(self, "AT+LBTRSSI=?")
+        if ok:
+            return response
+
+    def setListenBeforeTalkRSSI(self, value: int):
+        # Honestly, it's not entirely clear how this is supposed to be handled from the docs
+        response, ok = checkSuccess(self, f"AT+LBTRSSI={value}")
+        if ok:
+            return response
+
+    def getListenBeforeTalkScanTime(self):
+        response, ok = checkSuccess(self, "AT+LBTSCANTIME=?")
+        if ok:
+            return response
+
+    def setListenBeforeTalkScanTime(self, value: int):
+        # Again, not entirely clear. I think the value is expressed in seconds
+        response, ok = checkSuccess(self, f"AT+LBTSCANTIME={value}")
+        if ok:
+            return response
+
+    def getTimeReq(self):
+        response, ok = checkSuccess(self, "AT+TIMEREQ=?")
+        if ok:
+            return response
+
+    def setTimeReq(self, on: bool):
+        mode = 1 if on else 0
+        response, ok = checkSuccess(self, f"AT+TIMEREQ={mode}")
+        if ok:
+            return response
+
+    def getLocalTime(self):
+        response, ok = checkSuccess(self, "AT+LTIME=?")
+        if ok:
+            return response
+
