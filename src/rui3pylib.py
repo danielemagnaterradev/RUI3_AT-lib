@@ -582,7 +582,7 @@ class RUI3node(serial.Serial):
         if ok:
             return response
 
-    def setJoinDelayRXWindow2(self, value: int = 6):
+    def setJoinDelayRXWindow2(self, value: int):
         # This value must be greater than JoinDelayRXWindow1
         if value < 2 or value > 15:
             logging.info("Value must be within 2 and 15")
