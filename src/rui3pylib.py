@@ -510,3 +510,55 @@ class RUI3node(serial.Serial):
     ###############################################
     ######### LORAWAN Network Management ##########
     ###############################################
+
+    def getAdaptiveRate(self):
+        response, ok = cheà(self, "AT+ADR=?")
+        if ok:
+            return response
+
+    def setAdaptiveRate(self, on: bool):
+        mode = 1 if on else 0
+        response, ok = checkSuccess(self, f"AT+ADR={mode}")
+        if ok:
+            return response
+
+    def getLorawawnClass(self):
+        response, ok = checkSuccess(self, "AT+CLASS=?")
+        if ok:
+            return response
+
+    def setLorawanClass(self, lorawan_class: str):
+        # The value of class must be either A, B or C
+        if lorawan_class != "A" and lorawan_class != "B" and lorawan_class "C":
+            logging.info("LoRaWAN class must be either A, B or C")
+        else:
+            response, ok = checkSuccess(self, f"AT+CLASS={lorawan_class}")
+            if ok:
+                return response
+
+    def getDutyCycle(self):
+        response, ok = checkSuccess(self, "AT+DCS=?")
+        if ok:
+            return response
+
+    def setDutyCycle(self, on: bool):
+        # Be very careful with the regulation in you country since in some places it's mandatory
+        mode = 1 if on else 0
+        response, ok = checkSuccess(self, f"AT+DCS={mode}")
+        if ok:
+            return response
+
+    def getDataRate(self):
+        response, ok = checkSuccess(self, "AT+DR=?")
+        if ok:
+            return response
+
+    def setDataRate(self, data_rate: int):
+        # Must be between 0 and 7
+        # Also be careful with your country's regulation
+        if data_rate < 0 or data_rate > 7:
+            logging.info("data rate must be between 0 and 7")
+        else:
+            response, ok = checkSuccess(self, f"AT+DR={data_rate}")
+            if ok:
+                return response
