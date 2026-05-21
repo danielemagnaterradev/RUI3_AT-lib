@@ -562,3 +562,31 @@ class RUI3node(serial.Serial):
             response, ok = checkSuccess(self, f"AT+DR={data_rate}")
             if ok:
                 return response
+
+    def getJoinDelayRXWindow1(self):
+        response, ok = checkSuccess(self, "AT+JN1DL=?")
+        if ok:
+            return response
+
+    def setJoinDelayRXWindow1(self, value: int):
+        # Value must be within 1 and 14
+        if value < 1 or value > 14:
+            logging.info("Value must be within 1 and 14")
+        else:
+            response, ok = checkSuccess(self, f"AT+JN1DL={value}")
+            if ok:
+                return response
+
+    def getJoinDelayRXWindow2(self):
+        response, ok = checkSuccess(self, "AT+JN2DL=?")
+        if ok:
+            return response
+
+    def setJoinDelayRXWindow2(self, value: int = 6):
+        # This value must be greater than JoinDelayRXWindow1
+        if value < 2 or value > 15:
+            logging.info("Value must be within 2 and 15")
+        else:
+            response, ok = checkSuccess(self, f"AT+JN2DL={value}")
+            if ok:
+                return response
