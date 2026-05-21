@@ -627,7 +627,7 @@ class RUI3node(serial.Serial):
         if ok:
             return response
 
-    def setReceiveWindow2Delay(self. value: int):
+    def setReceiveWindow2Delay(self, value: int):
         if value < 2 or value > 15:
             logging.info("Value must be between 2 and 15")
         else:
@@ -657,7 +657,7 @@ class RUI3node(serial.Serial):
     def setReceiveWindow2Freq(self, freq: int):
         # This is the receive frequency in Hz
         response, ok = checkSuccess(self, f"AT+RX2FQ={freq}")
-        if ok: 
+        if ok:
             return response
 
     def getTransmitPower(self):
@@ -738,4 +738,3 @@ class RUI3node(serial.Serial):
         response, ok = checkSuccess(self, "AT+LTIME=?")
         if ok:
             return response
-
