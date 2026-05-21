@@ -6,8 +6,7 @@ import time
 from serial.tools.list_ports import comports
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
 
@@ -28,8 +27,7 @@ def sendCommand(serial: serial.Serial, cmd: str, wait: float = 3.0):
 
     # Filter out firmware debug lines
     response = "\n".join(
-        line for line in response.splitlines()
-        if not line.startswith("[APP]")
+        line for line in response.splitlines() if not line.startswith("[APP]")
     )
     return response
 
@@ -41,13 +39,16 @@ def checkSuccess(serial: serial.Serial, cmd: str, wait: float = 3.0):
     logging.info(f"[{_status(ok)}] {cmd}" + (f" -> {clean}" if clean else ""))
     return response, ok
 
+
 # This class contains all of the RUI3 commands as methods.
 # When initialized, it will try to connect automatically and, if a port was not directly passed,
 # it will automatically find the RUI3 compatible device for you.
 
 
 class RUI3node(serial.Serial):
-    def __init__(self, port: str | None = None, baudrate: int = 115200, timeout: float = 3.0):
+    def __init__(
+        self, port: str | None = None, baudrate: int = 115200, timeout: float = 3.0
+    ):
         super().__init__()
         self.port = port
         self.baudrate = baudrate
@@ -181,9 +182,8 @@ class RUI3node(serial.Serial):
         # the string MUST be 12 characters
         if all(char in string.hexdigits for char in mac) and len(mac) == 12:
             # forcing correct mac formatting from an unformatted hexstring
-            formatted = re.sub(f"(.{{{2}}})", f"\\1{":"}", mac)
-            response, ok = checkSuccess(
-                self, f"AT+BLEMAC={formatted[:-1].lower()}")
+            formatted = re.sub(f"(.{{{2}}})", f"\\1{':'}", mac)
+            response, ok = checkSuccess(self, f"AT+BLEMAC={formatted[:-1].lower()}")
             if ok:
                 return response
         else:
@@ -229,8 +229,7 @@ class RUI3node(serial.Serial):
 
     def setPassword(self, password: str):
         if len(password) < 1 or len(password) > 8:
-            logging.info(
-                "Password must be between 1 and 8 characters of length")
+            logging.info("Password must be between 1 and 8 characters of length")
         else:
             response, ok = checkSuccess(self, f"AT+PWORD={password}")
             if ok:
@@ -410,7 +409,13 @@ class RUI3node(serial.Serial):
         if ok:
             return response
 
-    def tryJoin(self, join: bool = True, auto_join: bool = False, interval: int = 8, join_attempts: int = 0):
+    def tryJoin(
+        self,
+        join: bool = True,
+        auto_join: bool = False,
+        interval: int = 8,
+        join_attempts: int = 0,
+    ):
         # paramaters are formatted like *:*:*:*
         # if nothing is passed, default values will be used
         # The command is asynchronous and it will return OK if the device is joining
@@ -426,7 +431,8 @@ class RUI3node(serial.Serial):
         if join_attempts < 0 and join_attempts > 255:
             logging.info("No. of join attempts must be within 0 and 255")
         response, ok = checkSuccess(
-            self, f"AT+JOIN={join_bin}:{auto_join_bin}:{interval}:{join_attempts}")
+            self, f"AT+JOIN={join_bin}:{auto_join_bin}:{interval}:{join_attempts}"
+        )
         if ok:
             return response
 
@@ -465,8 +471,7 @@ class RUI3node(serial.Serial):
         else:
             if all(char in string.hexdigits for char in payload):
                 if len(payload) > 2 and len(payload) < 500 and len(payload) % 2 == 0:
-                    response, ok = checkSuccess(
-                        self, f"AT+SEND={port}:{payload}")
+                    response, ok = checkSuccess(self, f"AT+SEND={port}:{payload}")
                     if ok:
                         return response
                 else:
@@ -485,7 +490,8 @@ class RUI3node(serial.Serial):
             if all(char in string.hexdigits for char in payload):
                 if len(payload) > 2 and len(payload) < 2000 and len(payload) % 2 == 0:
                     response, ok = checkSuccess(
-                        self, f"AT+LPSEND={port}:{ack_bool}:{payload}")
+                        self, f"AT+LPSEND={port}:{ack_bool}:{payload}"
+                    )
                     if ok:
                         return response
                 else:
