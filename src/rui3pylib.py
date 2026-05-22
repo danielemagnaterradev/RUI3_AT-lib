@@ -738,3 +738,58 @@ class RUI3node(serial.Serial):
         response, ok = checkSuccess(self, "AT+LTIME=?")
         if ok:
             return response
+
+    ################################
+    ######### Class B Mode #########
+    ################################
+
+    def getPeriodicity(self):
+        response, ok = checkSuccess(self, "AT+PGSLOT=?")
+        if ok:
+            return response
+
+    def setPeriodicity(self, value: int):
+        if value < 0 or value > 7:
+            logging.info("Value must be between 0 and 7")
+        else:
+            response, ok = checkSuccess(self, f"AT+PGLSOT={value}")
+            if ok:
+                return response
+
+    def getBeaconFreq(self):
+        response, ok = checkSuccess(self, "AT+BFREQ=?")
+        if ok:
+            return response
+
+    def getBeaconTime(self):
+        response, ok = checkSuccess(self, "AT+BTIME=?")
+        if ok:
+            return response
+
+    def getGWInfo(self):
+        response, ok = checkSuccess(self, "AT+BGW=?")
+        if ok:
+            return response
+
+    #######################################
+    ######### LoRaWAN Information #########
+    #######################################
+
+    def getRSSI(self):
+        response, ok = checkSuccess(self, "AT+RSSI=?")
+        if ok:
+            return response
+
+    def getAllChannelRSSI(self):
+        response, ok = checkSuccess(self, "AT+ARSSI=?")
+        if ok:
+            return response
+
+    def getSignalToNoiseRatio(self):
+        response, ok = checkSuccess(self, "AT+SNR=?")
+        if ok:
+            return response
+
+    
+
+
