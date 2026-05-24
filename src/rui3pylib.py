@@ -790,6 +790,10 @@ class RUI3node(serial.Serial):
         if ok:
             return response
 
-    
+    #############################################
+    ######### LoRaWAN Regional Commands #########
+    #############################################
 
-
+    # These commands are very technical and concern your country's regulation and the frequency band you
+    # are operating at, so proceed with caution. Keep in mind the format checking in the methods below won't
+    # be as strict so there might be more errors.
