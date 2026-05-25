@@ -823,7 +823,7 @@ class RUI3node(serial.Serial):
 
     def setEightChannelMode(self, value1: int = 0, value2: int = 0, value3: int = 0, value4: int = 0):
         # This mode is only for US915, AU915, CN470 AND LA915
-        # Each of this has specific ranges of values so keep that in mind
+        # Each of these regions has specific ranges of values so keep that in mind
         # These value must be between 0 and 9 or 0 and 12 for CN470
         response, ok = checkSuccess(self, f"AT+CHE={value1}:{value2}:{value3}:{value4}")
         if ok:
