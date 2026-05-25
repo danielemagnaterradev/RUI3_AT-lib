@@ -853,3 +853,6 @@ class RUI3node(serial.Serial):
             if ok:
                 return response
 
+    ###########################################
+    ######### LoRaWAN Multicast Group #########
+    ###########################################
