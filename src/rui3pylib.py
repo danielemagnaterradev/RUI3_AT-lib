@@ -797,14 +797,10 @@ class RUI3node(serial.Serial):
     # These commands are very technical and concern your country's regulation and the frequency band you
     # are operating at, so proceed with caution. Keep in mind the format checking in the methods below won't
     # be as strict so there might be more errors.
-    
-    def getMask(self):
-        response, ok = checkSuccess(slef, "AT=MASK=?")
-        if ok: 
-            return response
 
-    def setMask(self, mask: str)
-        if ok: 
+    def getMask(self):
+        response, ok = checkSuccess(self, "AT=MASK=?")
+        if ok:
             return response
 
     def setMask(self, mask: str):
@@ -821,7 +817,9 @@ class RUI3node(serial.Serial):
         if ok:
             return response
 
-    def setEightChannelMode(self, value1: int = 0, value2: int = 0, value3: int = 0, value4: int = 0):
+    def setEightChannelMode(
+        self, value1: int = 0, value2: int = 0, value3: int = 0, value4: int = 0
+    ):
         # This mode is only for US915, AU915, CN470 AND LA915
         # Each of these regions has specific ranges of values so keep that in mind
         # These value must be between 0 and 9 or 0 and 12 for CN470
@@ -840,12 +838,12 @@ class RUI3node(serial.Serial):
             return response
 
     def getFreqBand(self):
-        response, ok = checkSuccess(self, f"AT+BAND=?")
+        response, ok = checkSuccess(self, "AT+BAND=?")
         if ok:
             return response
 
     def setFreqBand(self, band: int):
-        # value must be between 0 and 12 
+        # value must be between 0 and 12
         if band < 0 or band > 12:
             logging.info("Value must be between 0 and 12")
         else:
