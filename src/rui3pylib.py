@@ -374,7 +374,7 @@ class RUI3node(serial.Serial):
             if ok:
                 return response
         else:
-            logging.info("")
+            logging.info("Device address must be exactly 8 hexdigits")
 
     def getAppSKey(self):
         response, ok = checkSuccess(self, "AT+APPSKEY=?")
