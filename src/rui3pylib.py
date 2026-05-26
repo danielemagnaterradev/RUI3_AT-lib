@@ -215,6 +215,24 @@ class RUI3node(serial.Serial):
         if ok:
             return response
 
+    def getLowPowerModeLevel(self):
+        # NOTE: only effective on RAK3172; has no effect on other modules.
+        # Stop1 Mode allows wakeup via both UART1 and UART2.
+        # Stop2 Mode is more power-efficient but only UART2 can wake the device.
+        response, ok = checkSuccess(self, "AT+LPMLVL=?")
+        if ok:
+            return response
+
+    def setLowPowerModeLevel(self, level: int):
+        # NOTE: only effective on RAK3172; has no effect on other modules.
+        # level 1 = STOP1 Mode, level 2 = STOP2 Mode
+        if level != 1 and level != 2:
+            logging.warning("Level must be either 1 (STOP1) or 2 (STOP2)")
+            return None
+        response, ok = checkSuccess(self, f"AT+LPMLVL={level}")
+        if ok:
+            return response
+
     ######################################
     ######### SERIAL AT COMMANDS #########
     ######################################
@@ -235,6 +253,24 @@ class RUI3node(serial.Serial):
             if ok:
                 return response
 
+    def getBaudRate(self):
+        response, ok = checkSuccess(self, "AT+BAUD=?")
+        if ok:
+            return response
+
+    def setBaudRate(self, baudrate: int):
+        # Valid values: standard serial baud rates (e.g. 9600, 115200, etc.)
+        # The last configured baudrate is retained even after reset or power recycle.
+        response, ok = checkSuccess(self, f"AT+BAUD={baudrate}")
+        if ok:
+            return response
+
+    def switchToATMode(self):
+        # Switches the device back to AT command mode (default mode)
+        response, ok = checkSuccess(self, "AT+ATM")
+        if ok:
+            return response
+
     #######################################
     ######### BOOTLOADER COMMANDS #########
     #######################################
@@ -250,6 +286,7 @@ class RUI3node(serial.Serial):
             return response
 
     def getBootloaderVer(self):
+        # Only works in boot mode. Returns the bootloader version string.
         response, ok = checkSuccess(self, "AT+VER=?")
         if ok:
             return response
@@ -416,7 +453,7 @@ class RUI3node(serial.Serial):
         interval: int = 8,
         join_attempts: int = 0,
     ):
-        # paramaters are formatted like *:*:*:*
+        # parameters are formatted like *:*:*:*
         # if nothing is passed, default values will be used
         # The command is asynchronous and it will return OK if the device is joining
         # The completion of the join can be verified with the getNetworkJoinStatus method
@@ -424,12 +461,15 @@ class RUI3node(serial.Serial):
         join_bin = 1 if join else 0
         # Auto_join = 1 for auto-join on power-up, 0 for no auto-join
         auto_join_bin = 1 if auto_join else 0
-        # Reattempt interval in second, default is 8
+        # Reattempt interval in seconds, must be within 7 and 255
         if interval < 7 or interval > 255:
-            logging.info("Reattempt value must be within 7 and 255")
+            logging.warning("Reattempt value must be within 7 and 255")
+            return None
         # No. of join attempts, must be within 0 and 255
-        if join_attempts < 0 and join_attempts > 255:
-            logging.info("No. of join attempts must be within 0 and 255")
+        # FIX: was `and` (impossible condition), must be `or`
+        if join_attempts < 0 or join_attempts > 255:
+            logging.warning("No. of join attempts must be within 0 and 255")
+            return None
         response, ok = checkSuccess(
             self, f"AT+JOIN={join_bin}:{auto_join_bin}:{interval}:{join_attempts}"
         )
@@ -457,47 +497,47 @@ class RUI3node(serial.Serial):
             return response
 
     def getLastReceivedData(self):
-        # This command returns the last received data alog with the port it was received from
-        # Format is like <port>:<payload><CR><LR>
+        # This command returns the last received data along with the port it was received from
+        # Format is like <port>:<payload><CR><LF>
         response, ok = checkSuccess(self, "AT+RECV=?")
         if ok:
             return response
 
     def sendData(self, port: int, payload: str):
         # Port number must be within 1 and 233
-        # Payload must  be within 2 and 500 digit length, to represent 1 to 256 hexadecimal numbers
+        # Payload must be within 2 and 500 digit length (even number), representing 1 to 256 hex bytes
+        # FIX: was `> 2`, must be `>= 2` to allow 1-byte (2 hex chars) payloads per the docs
         if port < 1 or port > 233:
             logging.info("Invalid port")
-        else:
-            if all(char in string.hexdigits for char in payload):
-                if len(payload) > 2 and len(payload) < 500 and len(payload) % 2 == 0:
-                    response, ok = checkSuccess(self, f"AT+SEND={port}:{payload}")
-                    if ok:
-                        return response
-                else:
-                    logging.info("Invalid payload size")
-            else:
-                logging.info("Invalid payload format")
+            return None
+        if not all(char in string.hexdigits for char in payload):
+            logging.info("Invalid payload format")
+            return None
+        if len(payload) < 2 or len(payload) > 500 or len(payload) % 2 != 0:
+            logging.info("Invalid payload size")
+            return None
+        response, ok = checkSuccess(self, f"AT+SEND={port}:{payload}")
+        if ok:
+            return response
 
     def sendLongPacketData(self, port: int, ack: bool, payload: str):
         # Same as above except the packet can be up to 1000 bytes long
         # This is an asynchronous command and will return OK when the device starts to send
         # Long Packet mode only works for uplink packets. Downlink packet cannot have the long packet data format
+        # FIX: was `> 2`, must be `>= 2` to allow 1-byte (2 hex chars) payloads per the docs
         ack_bool = 1 if ack else 0
         if port < 1 or port > 233:
             logging.info("Invalid port")
-        else:
-            if all(char in string.hexdigits for char in payload):
-                if len(payload) > 2 and len(payload) < 2000 and len(payload) % 2 == 0:
-                    response, ok = checkSuccess(
-                        self, f"AT+LPSEND={port}:{ack_bool}:{payload}"
-                    )
-                    if ok:
-                        return response
-                else:
-                    logging.info("Invalid payload size")
-            else:
-                logging.info("Invalid payload format")
+            return None
+        if not all(char in string.hexdigits for char in payload):
+            logging.info("Invalid payload format")
+            return None
+        if len(payload) < 2 or len(payload) > 2000 or len(payload) % 2 != 0:
+            logging.info("Invalid payload size")
+            return None
+        response, ok = checkSuccess(self, f"AT+LPSEND={port}:{ack_bool}:{payload}")
+        if ok:
+            return response
 
     def setConfirmPacketRetransmission(self, tries: int):
         # Sets the number of of retries for confirm packets
@@ -529,14 +569,14 @@ class RUI3node(serial.Serial):
         if ok:
             return response
 
-    def getLorawawnClass(self):
+    def getLorawanClass(self):
         response, ok = checkSuccess(self, "AT+CLASS=?")
         if ok:
             return response
 
     def setLorawanClass(self, lorawan_class: str):
         # The value of class must be either A, B or C
-        if lorawan_class != "A" and lorawan_class != "B" and lorawan_class != "C":
+        if lorawan_class not in ("A", "B", "C"):
             logging.info("LoRaWAN class must be either A, B or C")
         else:
             response, ok = checkSuccess(self, f"AT+CLASS={lorawan_class}")
@@ -549,7 +589,7 @@ class RUI3node(serial.Serial):
             return response
 
     def setDutyCycle(self, on: bool):
-        # Be very careful with the regulation in you country since in some places it's mandatory
+        # Be very careful with the regulation in your country since in some places it's mandatory
         mode = 1 if on else 0
         response, ok = checkSuccess(self, f"AT+DCS={mode}")
         if ok:
@@ -666,7 +706,10 @@ class RUI3node(serial.Serial):
             return response
 
     def setTransmitPower(self, value: int):
-        # Be careful with your country's regulation
+        # Be careful with your country's regulation.
+        # Valid range depends on region:
+        #   EU433: 0-5 | EU868/CN470/KR920/AS923/RU864: 0-7
+        #   IN865: 0-10 | US915/AU915: 0-14
         if value < 0 or value > 14:
             logging.info("Value must between 0 and 14")
         else:
@@ -683,7 +726,7 @@ class RUI3node(serial.Serial):
         # 0 - Disable link check
         # 1 - Execute link check just once on the next payload uplink
         # 2 - Module will automatically execute one-time link check after every payload uplink
-        if value != 0 and value != 1 and value != 2:
+        if value not in (0, 1, 2):
             logging.info("Value must be either 0, 1 or 2")
         else:
             response, ok = checkSuccess(self, f"AT+LINKCHECK={value}")
@@ -752,7 +795,7 @@ class RUI3node(serial.Serial):
         if value < 0 or value > 7:
             logging.info("Value must be between 0 and 7")
         else:
-            response, ok = checkSuccess(self, f"AT+PGLSOT={value}")
+            response, ok = checkSuccess(self, f"AT+PGSLOT={value}")
             if ok:
                 return response
 
@@ -799,7 +842,8 @@ class RUI3node(serial.Serial):
     # be as strict so there might be more errors.
 
     def getMask(self):
-        response, ok = checkSuccess(self, "AT=MASK=?")
+        # FIX: was "AT=MASK=?" (used = instead of +), corrected to "AT+MASK=?"
+        response, ok = checkSuccess(self, "AT+MASK=?")
         if ok:
             return response
 
@@ -855,23 +899,49 @@ class RUI3node(serial.Serial):
     ######### LoRaWAN Multicast Group Commands #########
     ####################################################
 
-    def setMulticastGroup(self, classL: str, dev_addr: str, nwk_s_key: str, app_s_key: str, freq: int, datarate: int, periodicity: int):
-        if classL != "A" or classL != "B" or classL != "C":
-            logging.info("Class must be either A, B or C")
-            if not(all(char in string.hexdigits for char in dev_addr) and len(dev_addr) == 8):
-                logging.info("dev_addr must be exactly 8 hexdigits")
-                if not(all(char in string.hexdigits for char in nwk_s_key) and len(nwk_s_key) == 32):
-                    logging.info("Network key must be exactly 32 hexdigits")
-                    if not(all(char in string.hexdigits for char in app_s_key) and len(app_s_key) == 32):
-                        logging.info("App key must be exactly 32 hexdigits")
-                        if datarate < 0 or datarate > 7:
-                            logging.info("Datarate must be between 0 and 7")
-                            if periodicity < 0 and periodicity > 7:
-                                logging.info("periodicity must be between 0 and 7")
-        else:
-            response, ok = checkSuccess(self, f"AT+ADDMULC={classL}:{dev_addr}:{nwk_s_key}:{app_s_key}:{freq}:{datarate}:{periodicity}")
-            if ok:
-                return response
+    def setMulticastGroup(
+        self,
+        classL: str,
+        dev_addr: str,
+        nwk_s_key: str,
+        app_s_key: str,
+        freq: int,
+        datarate: int,
+        periodicity: int,
+    ):
+        # FIX 1: classL must be B or C only — multicast is not supported on Class A per the docs
+        # FIX 2: was `!=A or !=B or !=C` (always True) and nested ifs (only ran if previous check failed)
+        #         now uses guard clauses: each check is independent, returns early on failure
+        if classL not in ("B", "C"):
+            logging.warning("Multicast class must be either B or C")
+            return None
+        if not (
+            all(char in string.hexdigits for char in dev_addr) and len(dev_addr) == 8
+        ):
+            logging.warning("dev_addr must be exactly 8 hexdigits")
+            return None
+        if not (
+            all(char in string.hexdigits for char in nwk_s_key) and len(nwk_s_key) == 32
+        ):
+            logging.warning("Network key must be exactly 32 hexdigits")
+            return None
+        if not (
+            all(char in string.hexdigits for char in app_s_key) and len(app_s_key) == 32
+        ):
+            logging.warning("App key must be exactly 32 hexdigits")
+            return None
+        if datarate < 0 or datarate > 7:
+            logging.warning("Datarate must be between 0 and 7")
+            return None
+        if periodicity < 0 or periodicity > 7:
+            logging.warning("Periodicity must be between 0 and 7")
+            return None
+        response, ok = checkSuccess(
+            self,
+            f"AT+ADDMULC={classL}:{dev_addr}:{nwk_s_key}:{app_s_key}:{freq}:{datarate}:{periodicity}",
+        )
+        if ok:
+            return response
 
     def removeMulticastGroup(self, dev_addr: str):
         if all(char in string.hexdigits for char in dev_addr) and len(dev_addr) == 8:
