@@ -858,11 +858,11 @@ class RUI3node(serial.Serial):
     def setMulticastGroup(self, classL: str, dev_addr: str, nwk_s_key: str, app_s_key: str, freq: int, datarate: int, periodicity: int):
         if classL != "A" or classL != "B" or classL != "C":
             logging.info("Class must be either A, B or C")
-            if not all(char in string.hexdigits for char in dev_addr) and len(dev_addr) == 8:
+            if not(all(char in string.hexdigits for char in dev_addr) and len(dev_addr) == 8):
                 logging.info("dev_addr must be exactly 8 hexdigits")
-                if not all(char in string.hexdigits for char in nwk_s_key) and len(nwk_s_key) == 32:
+                if not(all(char in string.hexdigits for char in nwk_s_key) and len(nwk_s_key) == 32):
                     logging.info("Network key must be exactly 32 hexdigits")
-                    if not all(char in string.hexdigits for char in app_s_key) and len(app_s_key) == 32:
+                    if not(all(char in string.hexdigits for char in app_s_key) and len(app_s_key) == 32):
                         logging.info("App key must be exactly 32 hexdigits")
                         if datarate < 0 or datarate > 7:
                             logging.info("Datarate must be between 0 and 7")
