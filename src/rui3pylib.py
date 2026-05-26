@@ -572,10 +572,10 @@ class RUI3node(serial.Serial):
 
     def setLorawanClass(self, lorawan_class: str):
         # The value of class must be either A, B or C
-        if lorawan_class not in ("A", "B", "C"):
+        if lorawan_class.upper() not in ("A", "B", "C"):
             logging.info("LoRaWAN class must be either A, B or C")
         else:
-            response, ok = checkSuccess(self, f"AT+CLASS={lorawan_class}")
+            response, ok = checkSuccess(self, f"AT+CLASS={lorawan_class.upper()}")
             if ok:
                 return response
 
@@ -904,7 +904,7 @@ class RUI3node(serial.Serial):
         datarate: int,
         periodicity: int,
     ):
-        if classL not in ("B", "C"):
+        if classL.upper() not in ("B", "C"):
             logging.warning("Multicast class must be either B or C")
             return None
         if not (
@@ -930,7 +930,7 @@ class RUI3node(serial.Serial):
             return None
         response, ok = checkSuccess(
             self,
-            f"AT+ADDMULC={classL}:{dev_addr}:{nwk_s_key}:{app_s_key}:{freq}:{datarate}:{periodicity}",
+            f"AT+ADDMULC={classL.upper()}:{dev_addr}:{nwk_s_key}:{app_s_key}:{freq}:{datarate}:{periodicity}",
         )
         if ok:
             return response
