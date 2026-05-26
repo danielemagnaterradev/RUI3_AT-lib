@@ -329,8 +329,7 @@ class RUI3node(serial.Serial):
             if ok:
                 return response
         else:
-            # String is malformed and will return AT_PARAM_ERROR
-            logging.info("AT_PARAM_ERROR")
+            logging.info("Device eui must be exactly 16 hexdigits")
 
     # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     # The specifications and errors for the above method are valid for all the
@@ -347,7 +346,7 @@ class RUI3node(serial.Serial):
             if ok:
                 return response
         else:
-            logging.info("AT_PARAM_ERROR")
+            logging.info("App eui must be exactly 16 hexdigits")
 
     def getAppKey(self):
         response, ok = checkSuccess(self, "AT+APPKEY=?")
@@ -361,7 +360,7 @@ class RUI3node(serial.Serial):
             if ok:
                 return response
         else:
-            logging.info("AT_PARAM_ERROR")
+            logging.info("App Key must be exactly 32 hexdigits")
 
     def getDevAddr(self):
         response, ok = checkSuccess(self, "AT+DEVADDR=?")
@@ -375,7 +374,7 @@ class RUI3node(serial.Serial):
             if ok:
                 return response
         else:
-            logging.info("AT_PARAM_ERROR")
+            logging.info("")
 
     def getAppSKey(self):
         response, ok = checkSuccess(self, "AT+APPSKEY=?")
@@ -389,7 +388,7 @@ class RUI3node(serial.Serial):
             if ok:
                 return response
         else:
-            logging.info("AT_PARAM_ERROR")
+            logging.info("App seecurity key must be exactly 32 hexdigits")
 
     def getNetworkSKey(self):
         response, ok = checkSuccess(self, "AT+NWKSKEY=?")
@@ -403,7 +402,7 @@ class RUI3node(serial.Serial):
             if ok:
                 return response
         else:
-            logging.info("AT_PARAM_ERROR")
+            logging.info("Network security key must be exactly 32 hexdigits")
 
     def getNetworkID(self):
         response, ok = checkSuccess(self, "AT+NETID=?")
@@ -417,7 +416,7 @@ class RUI3node(serial.Serial):
             if ok:
                 return response
         else:
-            logging.info("AT_PARAM_ERROR")
+            logging.info("Network ID must be exactly 6 hexdigits")
 
     def getMulticastRootKey(self):
         response, ok = checkSuccess(self, "AT+MCROOTKEY=?")
@@ -466,7 +465,6 @@ class RUI3node(serial.Serial):
             logging.warning("Reattempt value must be within 7 and 255")
             return None
         # No. of join attempts, must be within 0 and 255
-        # FIX: was `and` (impossible condition), must be `or`
         if join_attempts < 0 or join_attempts > 255:
             logging.warning("No. of join attempts must be within 0 and 255")
             return None
@@ -506,7 +504,6 @@ class RUI3node(serial.Serial):
     def sendData(self, port: int, payload: str):
         # Port number must be within 1 and 233
         # Payload must be within 2 and 500 digit length (even number), representing 1 to 256 hex bytes
-        # FIX: was `> 2`, must be `>= 2` to allow 1-byte (2 hex chars) payloads per the docs
         if port < 1 or port > 233:
             logging.info("Invalid port")
             return None
@@ -524,7 +521,6 @@ class RUI3node(serial.Serial):
         # Same as above except the packet can be up to 1000 bytes long
         # This is an asynchronous command and will return OK when the device starts to send
         # Long Packet mode only works for uplink packets. Downlink packet cannot have the long packet data format
-        # FIX: was `> 2`, must be `>= 2` to allow 1-byte (2 hex chars) payloads per the docs
         ack_bool = 1 if ack else 0
         if port < 1 or port > 233:
             logging.info("Invalid port")
@@ -842,7 +838,6 @@ class RUI3node(serial.Serial):
     # be as strict so there might be more errors.
 
     def getMask(self):
-        # FIX: was "AT=MASK=?" (used = instead of +), corrected to "AT+MASK=?"
         response, ok = checkSuccess(self, "AT+MASK=?")
         if ok:
             return response
@@ -909,9 +904,6 @@ class RUI3node(serial.Serial):
         datarate: int,
         periodicity: int,
     ):
-        # FIX 1: classL must be B or C only — multicast is not supported on Class A per the docs
-        # FIX 2: was `!=A or !=B or !=C` (always True) and nested ifs (only ran if previous check failed)
-        #         now uses guard clauses: each check is independent, returns early on failure
         if classL not in ("B", "C"):
             logging.warning("Multicast class must be either B or C")
             return None
