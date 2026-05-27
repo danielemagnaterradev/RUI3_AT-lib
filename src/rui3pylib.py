@@ -973,3 +973,60 @@ class RUI3node(serial.Serial):
     ####################################
     ######### P2P Instructions #########
     ####################################
+
+    def getLoraNetworkMode(self):
+        response, ok = checkSuccess(self, "AT+NWM=?")
+        if ok:
+            return response
+
+    def setLoraNetworkMode(self, mode: int):
+        # 0 - P2P_LORA
+        # 1 - LoRa
+        # 2 - P2P_FSK
+        if mode not in (0, 1, 2):
+            logging.warning("Mode must be either 0, 1 or 2")
+            return None
+        else:
+            response, ok = checkSuccess(self, f"AT+NWM={mode}")
+            if ok:
+                return response
+
+    def getP2PFreq(self):
+        response, ok = checkSuccess(self, "AT+PFREQ=?")
+        if ok:
+            return response
+
+    def setP2PFreq(self, freq: int):
+        response, ok = checkSuccess(self, f"AT+PFREQ={freq}")
+        if ok:
+            return response
+
+    def getSpreadFactor(self):
+        response, ok = checkSuccess(self, "AT+PSF=?")
+        if ok:
+            return response
+
+    def setSpreadFactor(self, spread: int = 7):
+        if spread not in (5, 6, 7, 8, 9, 10, 11, 12):
+            logging.warning("Value must be between 5 and 12")
+            return None
+        else:
+            response, ok = checkSuccess(self, f"AT+PSF={spread}")
+            if ok:
+                return response
+
+    def getP2PBand(self):
+        response, ok = checkSuccess(self, "AT+PBW=?")
+        if ok:
+            return response
+
+    def setP2PBand(self, band: int = 0):
+        if not 0 <= band <= 9:
+            logging.warning("Value must be between 0 and 9")
+            return None
+        else:
+            response, ok = checkSuccess(self, f"AT+PBW={band}")
+            if ok:
+                return response
+
+    
