@@ -1,5 +1,4 @@
 import logging
-import re
 import serial
 import string
 import time
@@ -40,9 +39,9 @@ def checkSuccess(serial: serial.Serial, cmd: str, wait: float = 3.0):
     return response, ok
 
 
-# This class contains all of the RUI3 commands as methods.
-# When initialized, it will try to connect automatically and, if a port was not directly passed,
-# it will automatically find the RUI3 compatible device for you.
+# This class wraps all RUI3 AT commands as methods.
+# On initialization, if no port is specified, it scans all available serial ports
+# and connects to the first RUI3-compatible device found.
 
 
 class RUI3node(serial.Serial):
@@ -169,7 +168,7 @@ class RUI3node(serial.Serial):
             return response
 
     def setDeviceAlias(self, alias: str):
-        # Must be a string of up to 16 characters
+        # Must be between 1 and 16 characters.
         if len(alias) < 1 or len(alias) > 16:
             logging.warning("Alias must be between 1 and 16 characters")
             return None
@@ -188,11 +187,11 @@ class RUI3node(serial.Serial):
             return response
 
     def setBLEMac(self, mac: str):
-        # The string MUST be 12 characters
+        # Input must be exactly 12 hexadecimal characters (e.g. 001122334455),
+        # which are formatted internally as colon-separated pairs (e.g. 00:11:22:33:44:55).
         if all(char in string.hexdigits for char in mac) and len(mac) == 12:
-            # Forcing correct mac formatting from an unformatted hexstring
-            formatted = re.sub(f"(.{{{2}}})", f"\\1{':'}", mac)
-            response, ok = checkSuccess(self, f"AT+BLEMAC={formatted[:-1].lower()}")
+            formatted = ":".join(mac[i : i + 2] for i in range(0, 12, 2))
+            response, ok = checkSuccess(self, f"AT+BLEMAC={formatted.lower()}")
             if ok:
                 return response
         else:
@@ -207,9 +206,8 @@ class RUI3node(serial.Serial):
     ######### LOW POWER COMMANDS #########
     ######################################
 
-    def atSleep(self, time: int):
-        # time is in milliseconds
-        response, ok = checkSuccess(self, f"AT+SLEEP={time}")
+    def atSleep(self, duration_ms: int):
+        response, ok = checkSuccess(self, f"AT+SLEEP={duration_ms}")
         if ok:
             return response
 
@@ -225,7 +223,7 @@ class RUI3node(serial.Serial):
             return response
 
     def getLowPowerModeLevel(self):
-        # NOTE: only effective on RAK3172; has no effect on other modules.
+        # Only effective on RAK3172; has no effect on other modules.
         # Stop1 Mode allows wakeup via both UART1 and UART2.
         # Stop2 Mode is more power-efficient but only UART2 can wake the device.
         response, ok = checkSuccess(self, "AT+LPMLVL=?")
@@ -233,7 +231,7 @@ class RUI3node(serial.Serial):
             return response
 
     def setLowPowerModeLevel(self, level: int):
-        # NOTE: only effective on RAK3172; has no effect on other modules.
+        # Only effective on RAK3172; has no effect on other modules.
         # level 1 = STOP1 Mode, level 2 = STOP2 Mode
         if level != 1 and level != 2:
             logging.warning("Level must be either 1 (STOP1) or 2 (STOP2)")
@@ -247,16 +245,15 @@ class RUI3node(serial.Serial):
     ######################################
 
     def lockSerial(self):
-        # This method locks the serial port and it will require a password to access it
-        # The default password is 00000000
-        # You can change the password with the setPassword method
-        # The command doesn't return OK
+        # Locks the serial port; a password is required to unlock it.
+        # The default password is 00000000 and can be changed with setPassword().
+        # AT+LOCK does not return OK.
         _ = sendCommand(self, "AT+LOCK")
         logging.info(f"Serial port {self.port} is now locked")
 
     def setPassword(self, password: str):
         if len(password) < 1 or len(password) > 8:
-            logging.warning("Password must be between 1 and 8 characters of length")
+            logging.warning("Password must be between 1 and 8 characters")
             return None
         response, ok = checkSuccess(self, f"AT+PWORD={password}")
         if ok:
@@ -268,14 +265,12 @@ class RUI3node(serial.Serial):
             return response
 
     def setBaudRate(self, baudrate: int):
-        # Valid values: standard serial baud rates (e.g. 9600, 115200, etc.)
-        # The last configured baudrate is retained even after reset or power recycle.
+        # The configured baud rate is retained even after reset or power recycle.
         response, ok = checkSuccess(self, f"AT+BAUD={baudrate}")
         if ok:
             return response
 
     def switchToATMode(self):
-        # Switches the device back to AT command mode (default mode)
         response, ok = checkSuccess(self, "AT+ATM")
         if ok:
             return response
@@ -284,20 +279,18 @@ class RUI3node(serial.Serial):
     ######### BOOTLOADER COMMANDS #########
     #######################################
 
-    # These methods, with the exception of the first one, only work in boot mode
+    # All methods in this section except setBootMode() only work while in boot mode.
 
     def setBootMode(self):
-        # This method sets the device in boot mode
-        # Boot mode can be interrupted with the atRun method
-        # AT_BUSY_ERROR is returned when the bootloader process is already running
+        # Enters bootloader mode for firmware upgrade.
+        # To leave boot mode, call atRun().
+        # AT_BUSY_ERROR is returned if the bootloader process is already running.
         response, ok = checkSuccess(self, "AT+BOOT")
         if ok:
             return response
 
     def getBootloaderVer(self):
-        # Only works in boot mode. Returns the bootloader version string.
-        # Uses AT+VERSION (no parameter) which is the dedicated bootloader-only command,
-        # distinct from AT+VER=? used by getFirmVersion() in normal mode.
+        # Uses AT+VERSION (boot mode only), which is distinct from AT+VER=? used by getFirmVersion() in normal mode.
         return sendCommand(self, "AT+VERSION")
 
     def getBootloaderStatus(self):
@@ -305,7 +298,6 @@ class RUI3node(serial.Serial):
         return sendCommand(self, "AT+BOOTSTATUS")
 
     def atRun(self):
-        # This method makes the device leave boot mode and boots into the application.
         # AT+RUN does not return OK; sendCommand is used directly.
         return sendCommand(self, "AT+RUN")
 
@@ -319,7 +311,7 @@ class RUI3node(serial.Serial):
         return sendCommand(self, "AT+UPDATE")
 
     #######################################
-    ######### LORAWAN KEYS AND ID #########
+    ######### LORAWAN KEYS AND IDs ########
     #######################################
 
     def getDeviceEUI(self):
@@ -328,7 +320,7 @@ class RUI3node(serial.Serial):
             return response
 
     def setDeviceEUI(self, deveui: str):
-        # Check if the string is comprised of precisely 16 hexdigits
+        # Must be exactly 16 hexadecimal characters, representing 8 bytes (MSB first).
         if all(char in string.hexdigits for char in deveui) and len(deveui) == 16:
             response, ok = checkSuccess(self, f"AT+DEVEUI={deveui}")
             if ok:
@@ -337,9 +329,7 @@ class RUI3node(serial.Serial):
             logging.warning("Device EUI must be exactly 16 hexdigits")
             return None
 
-    # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    # The specifications and errors for the above method are valid for all the
-    # methods in this section
+    # The format rules above (only hexadecimal characters, MSB first) apply to all setter methods in this section.
 
     def getAppEUI(self):
         response, ok = checkSuccess(self, "AT+APPEUI=?")
@@ -361,7 +351,6 @@ class RUI3node(serial.Serial):
             return response
 
     def setAppKey(self, appkey: str):
-        # Must be 32 hexdigits
         if all(char in string.hexdigits for char in appkey) and len(appkey) == 32:
             response, ok = checkSuccess(self, f"AT+APPKEY={appkey}")
             if ok:
@@ -376,7 +365,6 @@ class RUI3node(serial.Serial):
             return response
 
     def setDevAddr(self, devaddr: str):
-        # Must be 8 hexdigits
         if all(char in string.hexdigits for char in devaddr) and len(devaddr) == 8:
             response, ok = checkSuccess(self, f"AT+DEVADDR={devaddr}")
             if ok:
@@ -391,7 +379,6 @@ class RUI3node(serial.Serial):
             return response
 
     def setAppSKey(self, appskey: str):
-        # Must be 32 hexdigits
         if all(char in string.hexdigits for char in appskey) and len(appskey) == 32:
             response, ok = checkSuccess(self, f"AT+APPSKEY={appskey}")
             if ok:
@@ -406,7 +393,6 @@ class RUI3node(serial.Serial):
             return response
 
     def setNetworkSKey(self, netskey: str):
-        # Must be 32 hexdigits
         if all(char in string.hexdigits for char in netskey) and len(netskey) == 32:
             response, ok = checkSuccess(self, f"AT+NWKSKEY={netskey}")
             if ok:
@@ -421,7 +407,6 @@ class RUI3node(serial.Serial):
             return response
 
     def setNetworkID(self, netid: str):
-        # Must be 6 hexdigits
         if all(char in string.hexdigits for char in netid) and len(netid) == 6:
             response, ok = checkSuccess(self, f"AT+NETID={netid}")
             if ok:
@@ -445,14 +430,14 @@ class RUI3node(serial.Serial):
             return response
 
     def setConfirmMode(self, on: bool):
-        # This method is used to configure the uplink payload to be confirmed or unconfirmed type
+        # Configures uplink payload as confirmed (True) or unconfirmed (False).
         mode = 1 if on else 0
         response, ok = checkSuccess(self, f"AT+CFM={mode}")
         if ok:
             return response
 
     def getConfirmStatus(self):
-        # This command is used to access the status of the last SEND command
+        # Returns the confirmation status of the last AT+SEND command (0 = failed, 1 = success).
         response, ok = checkSuccess(self, "AT+CFS=?")
         if ok:
             return response
@@ -469,19 +454,16 @@ class RUI3node(serial.Serial):
         interval: int = 8,
         join_attempts: int = 0,
     ):
-        # parameters are formatted like *:*:*:*
-        # if nothing is passed, default values will be used
-        # The command is asynchronous and it will return OK if the device is joining
-        # The completion of the join can be verified with the getNetworkJoinStatus method
-        # Join = 1 for joining the network, 0 for stop joining
+        # Sends AT+JOIN=<join>:<auto_join>:<interval>:<join_attempts>.
+        # This is an asynchronous command; OK means the join process has started.
+        # Use getNetworkJoinStatus() to poll for the result.
+        # interval: reattempt interval in seconds (7–255).
+        # join_attempts: number of join attempts (0–255); 0 means unlimited.
         join_bin = 1 if join else 0
-        # Auto_join = 1 for auto-join on power-up, 0 for no auto-join
         auto_join_bin = 1 if auto_join else 0
-        # Reattempt interval in seconds, must be within 7 and 255
         if interval < 7 or interval > 255:
             logging.warning("Reattempt value must be within 7 and 255")
             return None
-        # No. of join attempts, must be within 0 and 255
         if join_attempts < 0 or join_attempts > 255:
             logging.warning("No. of join attempts must be within 0 and 255")
             return None
@@ -512,8 +494,8 @@ class RUI3node(serial.Serial):
             return response
 
     def getLastReceivedData(self):
-        # This command returns the last received data along with the port it was received from
-        # Format is like <port>:<payload><CR><LF>
+        # Returns the last received downlink as <port>:<payload>.
+        # Returns "0:" if no data has been received since the last call.
         response, ok = checkSuccess(self, "AT+RECV=?")
         if ok:
             return response
@@ -522,43 +504,33 @@ class RUI3node(serial.Serial):
         # Port number must be within 1 and 233
         # Payload must be within 2 and 500 digit length (even number), representing 1 to 256 hex bytes
         if port < 1 or port > 233:
-            logging.warning("Invalid port")
+            logging.warning("Port must be between 1 and 233")
             return None
         if not all(char in string.hexdigits for char in payload):
-            logging.warning("Invalid payload format")
+            logging.warning("Payload must only contain hexadecimal characters")
             return None
         if len(payload) < 2 or len(payload) > 500 or len(payload) % 2 != 0:
-            logging.warning("Invalid payload size")
+            logging.warning("Payload length must be an even number between 2 and 500")
             return None
         response, ok = checkSuccess(self, f"AT+SEND={port}:{payload}")
         if ok:
             return response
 
     def sendLongPacketData(self, port: int, ack: bool, payload: str):
-        # Same as above except the packet can be up to 1000 bytes long
-        # This is an asynchronous command and will return OK when the device starts to send
-        # Long Packet mode only works for uplink packets. Downlink packet cannot have the long packet data format
+        # Sends a long packet payload (up to 1000 bytes) on the given port.
+        # This is an asynchronous command; OK means the send process has started.
+        # Only supported for uplink packets and requires a WisGate Edge gateway.
         ack_bool = 1 if ack else 0
         if port < 1 or port > 233:
-            logging.warning("Invalid port")
+            logging.warning("Port must be between 1 and 233")
             return None
         if not all(char in string.hexdigits for char in payload):
-            logging.warning("Invalid payload format")
+            logging.warning("Payload must only contain hexadecimal characters")
             return None
         if len(payload) < 2 or len(payload) > 2000 or len(payload) % 2 != 0:
-            logging.warning("Invalid payload size")
+            logging.warning("Payload length must be an even number between 2 and 2000")
             return None
         response, ok = checkSuccess(self, f"AT+LPSEND={port}:{ack_bool}:{payload}")
-        if ok:
-            return response
-
-    def setConfirmPacketRetransmission(self, tries: int):
-        # Sets the number of retries for confirm packets
-        # Must be within 0 and 7
-        if tries < 0 or tries > 7:
-            logging.warning("Invalid number: must be within 0 and 7")
-            return None
-        response, ok = checkSuccess(self, f"AT+RETY={tries}")
         if ok:
             return response
 
@@ -567,8 +539,16 @@ class RUI3node(serial.Serial):
         if ok:
             return response
 
+    def setConfirmPacketRetransmission(self, tries: int):
+        if tries < 0 or tries > 7:
+            logging.warning("Invalid number: must be within 0 and 7")
+            return None
+        response, ok = checkSuccess(self, f"AT+RETY={tries}")
+        if ok:
+            return response
+
     ###############################################
-    ######### LORAWAN Network Management ##########
+    ######### LORAWAN NETWORK MANAGEMENT ##########
     ###############################################
 
     def getAdaptiveRate(self):
@@ -588,7 +568,6 @@ class RUI3node(serial.Serial):
             return response
 
     def setLorawanClass(self, lorawan_class: str):
-        # The value of class must be either A, B or C
         if lorawan_class.upper() not in ("A", "B", "C"):
             logging.warning("LoRaWAN class must be either A, B or C")
             return None
@@ -602,7 +581,7 @@ class RUI3node(serial.Serial):
             return response
 
     def setDutyCycle(self, on: bool):
-        # Be very careful with the regulation in your country since in some places it's mandatory
+        # Duty cycle enforcement is mandatory in some regions (e.g. EU868); disable with caution.
         mode = 1 if on else 0
         response, ok = checkSuccess(self, f"AT+DCS={mode}")
         if ok:
@@ -614,8 +593,7 @@ class RUI3node(serial.Serial):
             return response
 
     def setDataRate(self, data_rate: int):
-        # Must be between 0 and 7
-        # Also be careful with your country's regulation
+        # Valid range varies by region; 0–7 is the widest possible range across all supported bands.
         if data_rate < 0 or data_rate > 7:
             logging.warning("Data rate must be between 0 and 7")
             return None
@@ -629,7 +607,6 @@ class RUI3node(serial.Serial):
             return response
 
     def setJoinDelayRXWindow1(self, value: int):
-        # Value must be within 1 and 14
         if value < 1 or value > 14:
             logging.warning("Value must be within 1 and 14")
             return None
@@ -643,7 +620,7 @@ class RUI3node(serial.Serial):
             return response
 
     def setJoinDelayRXWindow2(self, value: int):
-        # This value must be greater than JoinDelayRXWindow1
+        # Must be greater than the value set by setJoinDelayRXWindow1(); range is 2–15 seconds.
         if value < 2 or value > 15:
             logging.warning("Value must be within 2 and 15")
             return None
@@ -694,7 +671,7 @@ class RUI3node(serial.Serial):
             return response
 
     def setReceiveWindow2DataRate(self, value: int):
-        # Be careful with your geographical location since some locations have entirely different data rates possible
+        # Valid range varies by region: 0–5 for EU/AS/KR/CN, 8–13 for US915/AU915/LA915.
         if value < 0 or value > 13:
             logging.warning("Value must be between 0 and 13")
             return None
@@ -708,7 +685,6 @@ class RUI3node(serial.Serial):
             return response
 
     def setReceiveWindow2Freq(self, freq: int):
-        # This is the receive frequency in Hz
         response, ok = checkSuccess(self, f"AT+RX2FQ={freq}")
         if ok:
             return response
@@ -719,8 +695,7 @@ class RUI3node(serial.Serial):
             return response
 
     def setTransmitPower(self, value: int):
-        # Be careful with your country's regulation.
-        # Valid range depends on region:
+        # Valid range depends on region (0 = highest power):
         #   EU433: 0-5 | EU868/CN470/KR920/AS923/RU864: 0-7
         #   IN865: 0-10 | US915/AU915: 0-14
         if value < 0 or value > 14:
@@ -763,7 +738,7 @@ class RUI3node(serial.Serial):
             return response
 
     def setListenBeforeTalkRSSI(self, value: int):
-        # Honestly, it's not entirely clear how this is supposed to be handled from the docs
+        # Threshold RSSI level (in dBm) below which the channel is considered free.
         response, ok = checkSuccess(self, f"AT+LBTRSSI={value}")
         if ok:
             return response
@@ -774,7 +749,7 @@ class RUI3node(serial.Serial):
             return response
 
     def setListenBeforeTalkScanTime(self, value: int):
-        # Again, not entirely clear. I think the value is expressed in seconds
+        # Duration (in milliseconds) to scan the channel before transmitting.
         response, ok = checkSuccess(self, f"AT+LBTSCANTIME={value}")
         if ok:
             return response
@@ -850,9 +825,9 @@ class RUI3node(serial.Serial):
     ######### LoRaWAN Regional Commands #########
     #############################################
 
-    # These commands are very technical and concern your country's regulation and the frequency band you
-    # are operating at, so proceed with caution. Keep in mind the format checking in the methods below won't
-    # be as strict so there might be more errors.
+    # These commands are region-specific and govern frequency bands and regulatory compliance.
+    # Input validation is minimal; it is the caller's responsibility to pass values
+    # that are legal for the target region and deployment.
 
     def getMask(self):
         response, ok = checkSuccess(self, "AT+MASK=?")
@@ -860,7 +835,8 @@ class RUI3node(serial.Serial):
             return response
 
     def setMask(self, mask: str):
-        # This must be a 4 digit hexdigit mask, representing a 16 bit bitmask
+        # Must be exactly 4 hexadecimal characters, representing a 16-bit channel bitmask.
+        # Only applicable to US915, AU915, CN470, and LA915 regions.
         if all(char in string.hexdigits for char in mask) and len(mask) == 4:
             response, ok = checkSuccess(self, f"AT+MASK={mask}")
             if ok:
@@ -877,9 +853,8 @@ class RUI3node(serial.Serial):
     def setEightChannelMode(
         self, value1: int = 0, value2: int = 0, value3: int = 0, value4: int = 0
     ):
-        # This mode is only for US915, AU915, CN470 AND LA915
-        # Each of these regions has specific ranges of values so keep that in mind
-        # These value must be between 0 and 9 or 0 and 12 for CN470
+        # Only applicable to US915, AU915, CN470, and LA915 regions.
+        # Each parameter selects an 8-channel sub-band; valid range is 0–9 (0–12 for CN470).
         response, ok = checkSuccess(self, f"AT+CHE={value1}:{value2}:{value3}:{value4}")
         if ok:
             return response
@@ -900,7 +875,6 @@ class RUI3node(serial.Serial):
             return response
 
     def setFreqBand(self, band: int):
-        # Value must be between 0 and 12
         if band < 0 or band > 12:
             logging.warning("Value must be between 0 and 12")
             return None
@@ -922,9 +896,8 @@ class RUI3node(serial.Serial):
         datarate: int,
         periodicity: int,
     ):
-        # NOTE: Class B and Class C use the same command parameters.
-        # The periodicity parameter is required by the command even for Class C,
-        # where it has no functional effect.
+        # Class B and Class C use the same command parameters.
+        # The periodicity parameter is required even for Class C, where it has no functional effect.
         if classL.upper() not in ("B", "C"):
             logging.warning("Multicast class must be either B or C")
             return None
@@ -981,15 +954,14 @@ class RUI3node(serial.Serial):
 
     def setLoraNetworkMode(self, mode: int):
         # 0 - P2P_LORA
-        # 1 - LoRa
+        # 1 - LoRaWAN
         # 2 - P2P_FSK
         if mode not in (0, 1, 2):
             logging.warning("Mode must be either 0, 1 or 2")
             return None
-        else:
-            response, ok = checkSuccess(self, f"AT+NWM={mode}")
-            if ok:
-                return response
+        response, ok = checkSuccess(self, f"AT+NWM={mode}")
+        if ok:
+            return response
 
     def getP2PFreq(self):
         response, ok = checkSuccess(self, "AT+PFREQ=?")
@@ -1010,10 +982,9 @@ class RUI3node(serial.Serial):
         if spread not in (5, 6, 7, 8, 9, 10, 11, 12):
             logging.warning("Value must be between 5 and 12")
             return None
-        else:
-            response, ok = checkSuccess(self, f"AT+PSF={spread}")
-            if ok:
-                return response
+        response, ok = checkSuccess(self, f"AT+PSF={spread}")
+        if ok:
+            return response
 
     def getP2PBand(self):
         response, ok = checkSuccess(self, "AT+PBW=?")
@@ -1024,9 +995,6 @@ class RUI3node(serial.Serial):
         if not 0 <= band <= 9:
             logging.warning("Value must be between 0 and 9")
             return None
-        else:
-            response, ok = checkSuccess(self, f"AT+PBW={band}")
-            if ok:
-                return response
-
-    
+        response, ok = checkSuccess(self, f"AT+PBW={band}")
+        if ok:
+            return response
