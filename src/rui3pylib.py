@@ -1154,5 +1154,95 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    
+    def p2p_send(self, payload: str):
+        if all(char in string.hexdigits for char in payload) and 2<= len(payload) <= 500 and len(payload)%2 == 0:
+            response, ok = check_success(self, f"AT+PSEND={payload}")
+            if ok:
+                return response
+        else:
+            logging.warning("Payload must be an even number of hexadecimal characters between 2 and 500")
+            return None
+
+    def get_p2p_channel_activity(self):
+        response, ok = check_success(self, "AT+CAD=?")
+        if ok:
+            return response
+
+    def set_p2p_channel_activity(self, on: bool):
+        mode = 1 if on else 0
+        response, ok = check_success(self, f"AT+CAD={mode}")
+        if ok:
+            return response
+
+    def p2p_receive(self, timeout: int):
+        if not 1 <= timeout <= 65535:
+            logging.warning("Timeout must be between 1 and 65535 milliseconds")
+            return None
+        response, ok = check_success(self, f"AT+PRECV={timeout}")
+        if ok:
+            return response
+
+    def get_p2p_encryption(self):
+        response, ok = check_success(self, "AT+ENCRY=?")
+        if ok:
+            return response
+
+    def set_p2p_encryption(self, on: bool):
+        mode = 1 if on else 0
+        response, ok = check_success(self, f"AT+ENCRY={mode}")
+        if ok:
+            return response
+
+    def get_p2p_encryption_key(self):
+        response, ok = check_success(self, "AT+ENCKEY=?")
+        if ok:
+            return response
+
+    def set_p2p_encryption_key(self, key: str):
+        if all(char in string.hexdigits for char in key) and len(key) == 32:
+            response, ok = check_success(self, f"AT+ENCKEY={key}")
+            if ok:
+                return response
+        else:
+            logging.warning("Encrytion key must be exactly 32 hexadecimal characters")
+            return None
+
+    def get_p2p_crypt_status(self):
+        response, ok = check_success(self, "AT+PCRYPT=?")
+        if ok:
+            return response
+
+    def set_p2p_crypt_status(self, on: bool):
+        mode = 1 if on else 0
+        response, ok = check_success(self, f"AT+PCRYPT={mode}")
+        if ok:
+            return response
+
+    def get_p2p_crypt_decrypt_key(self):
+        response, ok = check_success(self, "AT+PKEY=?")
+        if ok:
+            return  response
+
+    def set_p2p_crypt_decrypt_key(self, key: str):
+        if all(char in string.hexdigits for char in key) and len(key) == 16:
+            response, ok = check_success(self, f"AT+PKEY={key}")
+            if ok:
+                return response
+        else:
+            logging.warning("Key must be exactly 16 hexadecimal characters")
+            return None
+
+    def get_p2p_crypt_iv(self):
+        response, ok = check_success(self, "AT+CRYPIV=?")
+        if ok:
+            return response
+
+    def set_p2p_crypt_iv(self, key: str):
+        if all(char in string.hexdigits for char in key) and len(key) == 32:
+            response, ok = check_success(self, f"AT+CRYPIV={key}")
+            if ok:
+                return response
+        else:
+            logging.warning("CryptIV key must be exactly 32 hexadecimal characters")
+            return None
 
