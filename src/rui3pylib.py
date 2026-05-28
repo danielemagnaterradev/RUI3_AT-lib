@@ -26,8 +26,7 @@ def send_command(port: serial.Serial, cmd: str, wait: float = 3.0):
 
     # Filter out firmware debug lines
     response = "\n".join(
-        line for line in response.splitlines()
-        if not line.startswith("[APP]")
+        line for line in response.splitlines() if not line.startswith("[APP]")
     )
     return response
 
@@ -36,9 +35,7 @@ def check_success(port: serial.Serial, cmd: str, wait: float = 3.0):
     response = send_command(port, cmd, wait)
     ok = "OK" in response
     clean = response.replace("OK", "").strip()
-    logging.info(
-        f"[{_status(ok)}] {cmd}" + (f" -> {clean}" if clean else "")
-    )
+    logging.info(f"[{_status(ok)}] {cmd}" + (f" -> {clean}" if clean else ""))
     return response, ok
 
 
@@ -69,9 +66,7 @@ class RUI3Node(serial.Serial):
                     else:
                         self.close()
                 except serial.serialutil.SerialException as e:
-                    logging.info(
-                        f"SerialException on {self.port}: {e}"
-                    )
+                    logging.info(f"SerialException on {self.port}: {e}")
                     if self.is_open:
                         self.close()
         else:
@@ -198,16 +193,12 @@ class RUI3Node(serial.Serial):
         # (e.g. 001122334455), which are formatted internally as
         # colon-separated pairs (e.g. 00:11:22:33:44:55).
         if all(char in string.hexdigits for char in mac) and len(mac) == 12:
-            formatted = ":".join(mac[i:i + 2] for i in range(0, 12, 2))
-            response, ok = check_success(
-                self, f"AT+BLEMAC={formatted.lower()}"
-            )
+            formatted = ":".join(mac[i : i + 2] for i in range(0, 12, 2))
+            response, ok = check_success(self, f"AT+BLEMAC={formatted.lower()}")
             if ok:
                 return response
         else:
-            logging.warning(
-                "Invalid format: it should be like 001122334455"
-            )
+            logging.warning("Invalid format: it should be like 001122334455")
 
     def get_boot_ver(self):
         response, ok = check_success(self, "AT+BOOTVER=?")
@@ -262,9 +253,7 @@ class RUI3Node(serial.Serial):
 
     def set_password(self, password: str):
         if len(password) < 1 or len(password) > 8:
-            logging.warning(
-                "Password must be between 1 and 8 characters"
-            )
+            logging.warning("Password must be between 1 and 8 characters")
             return None
         response, ok = check_success(self, f"AT+PWORD={password}")
         if ok:
@@ -333,10 +322,7 @@ class RUI3Node(serial.Serial):
     def set_device_eui(self, deveui: str):
         # Must be exactly 16 hexadecimal characters, representing
         # 8 bytes (MSB first).
-        if (
-            all(char in string.hexdigits for char in deveui)
-            and len(deveui) == 16
-        ):
+        if all(char in string.hexdigits for char in deveui) and len(deveui) == 16:
             response, ok = check_success(self, f"AT+DEVEUI={deveui}")
             if ok:
                 return response
@@ -353,10 +339,7 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_app_eui(self, appeui: str):
-        if (
-            all(char in string.hexdigits for char in appeui)
-            and len(appeui) == 16
-        ):
+        if all(char in string.hexdigits for char in appeui) and len(appeui) == 16:
             response, ok = check_success(self, f"AT+APPEUI={appeui}")
             if ok:
                 return response
@@ -370,10 +353,7 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_app_key(self, appkey: str):
-        if (
-            all(char in string.hexdigits for char in appkey)
-            and len(appkey) == 32
-        ):
+        if all(char in string.hexdigits for char in appkey) and len(appkey) == 32:
             response, ok = check_success(self, f"AT+APPKEY={appkey}")
             if ok:
                 return response
@@ -387,17 +367,12 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_dev_addr(self, devaddr: str):
-        if (
-            all(char in string.hexdigits for char in devaddr)
-            and len(devaddr) == 8
-        ):
+        if all(char in string.hexdigits for char in devaddr) and len(devaddr) == 8:
             response, ok = check_success(self, f"AT+DEVADDR={devaddr}")
             if ok:
                 return response
         else:
-            logging.warning(
-                "Device address must be exactly 8 hexdigits"
-            )
+            logging.warning("Device address must be exactly 8 hexdigits")
             return None
 
     def get_app_s_key(self):
@@ -406,17 +381,12 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_app_s_key(self, appskey: str):
-        if (
-            all(char in string.hexdigits for char in appskey)
-            and len(appskey) == 32
-        ):
+        if all(char in string.hexdigits for char in appskey) and len(appskey) == 32:
             response, ok = check_success(self, f"AT+APPSKEY={appskey}")
             if ok:
                 return response
         else:
-            logging.warning(
-                "App security key must be exactly 32 hexdigits"
-            )
+            logging.warning("App security key must be exactly 32 hexdigits")
             return None
 
     def get_network_s_key(self):
@@ -425,19 +395,12 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_network_s_key(self, netskey: str):
-        if (
-            all(char in string.hexdigits for char in netskey)
-            and len(netskey) == 32
-        ):
-            response, ok = check_success(
-                self, f"AT+NWKSKEY={netskey}"
-            )
+        if all(char in string.hexdigits for char in netskey) and len(netskey) == 32:
+            response, ok = check_success(self, f"AT+NWKSKEY={netskey}")
             if ok:
                 return response
         else:
-            logging.warning(
-                "Network security key must be exactly 32 hexdigits"
-            )
+            logging.warning("Network security key must be exactly 32 hexdigits")
             return None
 
     def get_network_id(self):
@@ -446,10 +409,7 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_network_id(self, netid: str):
-        if (
-            all(char in string.hexdigits for char in netid)
-            and len(netid) == 6
-        ):
+        if all(char in string.hexdigits for char in netid) and len(netid) == 6:
             response, ok = check_success(self, f"AT+NETID={netid}")
             if ok:
                 return response
@@ -505,19 +465,14 @@ class RUI3Node(serial.Serial):
         join_bin = 1 if join else 0
         auto_join_bin = 1 if auto_join else 0
         if interval < 7 or interval > 255:
-            logging.warning(
-                "Reattempt value must be within 7 and 255"
-            )
+            logging.warning("Reattempt value must be within 7 and 255")
             return None
         if join_attempts < 0 or join_attempts > 255:
-            logging.warning(
-                "No. of join attempts must be between 0 and 255"
-            )
+            logging.warning("No. of join attempts must be between 0 and 255")
             return None
         response, ok = check_success(
             self,
-            f"AT+JOIN={join_bin}:{auto_join_bin}"
-            f":{interval}:{join_attempts}",
+            f"AT+JOIN={join_bin}:{auto_join_bin}:{interval}:{join_attempts}",
         )
         if ok:
             return response
@@ -531,9 +486,7 @@ class RUI3Node(serial.Serial):
         # 0 = ABP mode
         # 1 = OTAA mode
         if mode != 0 and mode != 1:
-            logging.warning(
-                "Parameter must be either 0 (ABP) or 1 (OTAA)"
-            )
+            logging.warning("Parameter must be either 0 (ABP) or 1 (OTAA)")
             return None
         response, ok = check_success(self, f"AT+NJM={mode}")
         if ok:
@@ -560,18 +513,10 @@ class RUI3Node(serial.Serial):
             logging.warning("Port must be between 1 and 233")
             return None
         if not all(char in string.hexdigits for char in payload):
-            logging.warning(
-                "Payload must only contain hexadecimal characters"
-            )
+            logging.warning("Payload must only contain hexadecimal characters")
             return None
-        if (
-            len(payload) < 2
-            or len(payload) > 500
-            or len(payload) % 2 != 0
-        ):
-            logging.warning(
-                "Payload length must be an even number between 2 and 500"
-            )
+        if len(payload) < 2 or len(payload) > 500 or len(payload) % 2 != 0:
+            logging.warning("Payload length must be an even number between 2 and 500")
             return None
         response, ok = check_success(self, f"AT+SEND={port}:{payload}")
         if ok:
@@ -588,22 +533,12 @@ class RUI3Node(serial.Serial):
             logging.warning("Port must be between 1 and 233")
             return None
         if not all(char in string.hexdigits for char in payload):
-            logging.warning(
-                "Payload must only contain hexadecimal characters"
-            )
+            logging.warning("Payload must only contain hexadecimal characters")
             return None
-        if (
-            len(payload) < 2
-            or len(payload) > 2000
-            or len(payload) % 2 != 0
-        ):
-            logging.warning(
-                "Payload length must be an even number between 2 and 2000"
-            )
+        if len(payload) < 2 or len(payload) > 2000 or len(payload) % 2 != 0:
+            logging.warning("Payload length must be an even number between 2 and 2000")
             return None
-        response, ok = check_success(
-            self, f"AT+LPSEND={port}:{ack_bool}:{payload}"
-        )
+        response, ok = check_success(self, f"AT+LPSEND={port}:{ack_bool}:{payload}")
         if ok:
             return response
 
@@ -642,9 +577,7 @@ class RUI3Node(serial.Serial):
         if lorawan_class.upper() not in ("A", "B", "C"):
             logging.warning("LoRaWAN class must be either A, B or C")
             return None
-        response, ok = check_success(
-            self, f"AT+CLASS={lorawan_class.upper()}"
-        )
+        response, ok = check_success(self, f"AT+CLASS={lorawan_class.upper()}")
         if ok:
             return response
 
@@ -983,20 +916,17 @@ class RUI3Node(serial.Serial):
             logging.warning("Multicast class must be either B or C")
             return None
         if not (
-            all(char in string.hexdigits for char in dev_addr)
-            and len(dev_addr) == 8
+            all(char in string.hexdigits for char in dev_addr) and len(dev_addr) == 8
         ):
             logging.warning("dev_addr must be exactly 8 hexadecimal characters")
             return None
         if not (
-            all(char in string.hexdigits for char in nwk_s_key)
-            and len(nwk_s_key) == 32
+            all(char in string.hexdigits for char in nwk_s_key) and len(nwk_s_key) == 32
         ):
             logging.warning("Network key must be exactly 32 hexadecimal characters")
             return None
         if not (
-            all(char in string.hexdigits for char in app_s_key)
-            and len(app_s_key) == 32
+            all(char in string.hexdigits for char in app_s_key) and len(app_s_key) == 32
         ):
             logging.warning("App key must be exactly 32 hexadecimal characters")
             return None
@@ -1015,19 +945,12 @@ class RUI3Node(serial.Serial):
             return response
 
     def remove_multicast_group(self, dev_addr: str):
-        if (
-            all(char in string.hexdigits for char in dev_addr)
-            and len(dev_addr) == 8
-        ):
-            response, ok = check_success(
-                self, f"AT+RMVMULC={dev_addr}"
-            )
+        if all(char in string.hexdigits for char in dev_addr) and len(dev_addr) == 8:
+            response, ok = check_success(self, f"AT+RMVMULC={dev_addr}")
             if ok:
                 return response
         else:
-            logging.warning(
-                "Device address must be exactly 8 hexadecimal characters"
-            )
+            logging.warning("Device address must be exactly 8 hexadecimal characters")
             return None
 
     def get_multicast_group(self):
@@ -1094,7 +1017,7 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_code_rate(self, code_rate: int):
+    def set_p2p_code_rate(self, code_rate: int):
         if code_rate not in (0, 1, 2, 3):
             logging.warning("Code rate must be between 0 and 3")
             return None
@@ -1155,12 +1078,18 @@ class RUI3Node(serial.Serial):
             return response
 
     def p2p_send(self, payload: str):
-        if all(char in string.hexdigits for char in payload) and 2<= len(payload) <= 500 and len(payload)%2 == 0:
+        if (
+            all(char in string.hexdigits for char in payload)
+            and 2 <= len(payload) <= 500
+            and len(payload) % 2 == 0
+        ):
             response, ok = check_success(self, f"AT+PSEND={payload}")
             if ok:
                 return response
         else:
-            logging.warning("Payload must be an even number of hexadecimal characters between 2 and 500")
+            logging.warning(
+                "Payload must be an even number of hexadecimal characters between 2 and 500"
+            )
             return None
 
     def get_p2p_channel_activity(self):
@@ -1221,7 +1150,7 @@ class RUI3Node(serial.Serial):
     def get_p2p_crypt_decrypt_key(self):
         response, ok = check_success(self, "AT+PKEY=?")
         if ok:
-            return  response
+            return response
 
     def set_p2p_crypt_decrypt_key(self, key: str):
         if all(char in string.hexdigits for char in key) and len(key) == 16:
@@ -1245,4 +1174,3 @@ class RUI3Node(serial.Serial):
         else:
             logging.warning("CryptIV key must be exactly 32 hexadecimal characters")
             return None
-
