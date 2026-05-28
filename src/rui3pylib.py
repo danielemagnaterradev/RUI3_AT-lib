@@ -1088,3 +1088,76 @@ class RUI3Node(serial.Serial):
         response, ok = check_success(self, f"AT+PBW={band}")
         if ok:
             return response
+
+    def get_p2p_code_rate(self):
+        response, ok = check_success(self, "AT+PCR=?")
+        if ok:
+            return response
+
+    def get_p2p_code_rate(self, code_rate: int):
+        if code_rate not in (0, 1, 2, 3):
+            logging.warning("Code rate must be between 0 and 3")
+            return None
+        else:
+            response, ok = check_success(self, f"AT+PCR={code_rate}")
+            if ok:
+                return response
+
+    def get_p2p_preamble_length(self):
+        response, ok = check_success(self, "AT+PPL=?")
+        if ok:
+            return response
+
+    def set_p2p_preamble_length(self, length: int):
+        if not 5 <= length <= 65535:
+            logging.warning("Preamble length must be between 5 and 65535")
+            return None
+        else:
+            response, ok = check_success(self, f"AT+PPL={length}")
+            if ok:
+                return response
+
+    def get_p2p_tx_power(self):
+        response, ok = check_success(self, "AT+PTP=?")
+        if ok:
+            return response
+
+    def set_p2p_tx_power(self, tx_power: int):
+        if not 5 <= tx_power <= 22:
+            logging.warning("TX power must between 5 and 22")
+            return None
+        else:
+            response, ok = check_success(self, f"AT+PTP={tx_power}")
+            if ok:
+                return response
+
+    def get_p2p_fsk_bitrate(self):
+        response, ok = check_success(self, "AT+PBR=?")
+        if ok:
+            return response
+
+    def set_p2p_fsk_bitrate(self, bitrate: int):
+        if not 600 <= bitrate <= 300000:
+            logging.warning("Bitrate must be between 600 and 300000")
+            return None
+        else:
+            response, ok = check_success(self, f"AT+PBR={bitrate}")
+            if ok:
+                return response
+
+    def get_p2p_freq_deviation(self):
+        response, ok = check_success(self, "AT+PFDEV=?")
+        if ok:
+            return response
+
+    def set_p2p_freq_deviation(self, deviation: int):
+        if not 600 <= deviation <= 200000:
+            logging.warning("Frequency deviation must be between 600 and 200000")
+            return None
+        else:
+            response, ok = check_success(self, f"AT+PFDEV={deviation}")
+            if ok:
+                return response
+
+    
+
