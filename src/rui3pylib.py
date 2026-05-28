@@ -511,7 +511,7 @@ class RUI3Node(serial.Serial):
             return None
         if join_attempts < 0 or join_attempts > 255:
             logging.warning(
-                "No. of join attempts must be within 0 and 255"
+                "No. of join attempts must be between 0 and 255"
             )
             return None
         response, ok = check_success(
@@ -917,7 +917,7 @@ class RUI3Node(serial.Serial):
             if ok:
                 return response
         else:
-            logging.warning("This must be a 4 digit hexdigit mask")
+            logging.warning("This must be a 4 digit hexadecimal characters mask")
             return None
 
     def get_eight_channel_mode(self):
@@ -986,19 +986,19 @@ class RUI3Node(serial.Serial):
             all(char in string.hexdigits for char in dev_addr)
             and len(dev_addr) == 8
         ):
-            logging.warning("dev_addr must be exactly 8 hexdigits")
+            logging.warning("dev_addr must be exactly 8 hexadecimal characters")
             return None
         if not (
             all(char in string.hexdigits for char in nwk_s_key)
             and len(nwk_s_key) == 32
         ):
-            logging.warning("Network key must be exactly 32 hexdigits")
+            logging.warning("Network key must be exactly 32 hexadecimal characters")
             return None
         if not (
             all(char in string.hexdigits for char in app_s_key)
             and len(app_s_key) == 32
         ):
-            logging.warning("App key must be exactly 32 hexdigits")
+            logging.warning("App key must be exactly 32 hexadecimal characters")
             return None
         if datarate < 0 or datarate > 7:
             logging.warning("Datarate must be between 0 and 7")
@@ -1026,7 +1026,7 @@ class RUI3Node(serial.Serial):
                 return response
         else:
             logging.warning(
-                "Device address must be exactly 8 hexdigits"
+                "Device address must be exactly 8 hexadecimal characters"
             )
             return None
 
