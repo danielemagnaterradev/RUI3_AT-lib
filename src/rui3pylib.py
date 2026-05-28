@@ -58,7 +58,7 @@ class RUI3Node(serial.Serial):
         if port is None:
             for interface in comports():
                 try:
-                    self.port = interface.name
+                    self.port = interface.device
                     self.open()
                     if self.try_connect():
                         logging.info(f"Connected to port {self.port}")
