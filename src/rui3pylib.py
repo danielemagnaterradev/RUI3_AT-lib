@@ -1086,11 +1086,9 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+PSEND={payload}")
             if ok:
                 return response
-        else:
-            logging.warning(
-                "Payload must be an even number of hexadecimal characters between 2 and 500"
-            )
-            return None
+        logging.warning(
+            "Payload must be an even number of hexadecimal characters between 2 and 500"
+        )
 
     def get_p2p_channel_activity(self):
         response, ok = check_success(self, "AT+CAD=?")
@@ -1132,9 +1130,7 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+ENCKEY={key}")
             if ok:
                 return response
-        else:
-            logging.warning("Encrytion key must be exactly 32 hexadecimal characters")
-            return None
+        logging.warning("Encrytion key must be exactly 32 hexadecimal characters")
 
     def get_p2p_crypt_status(self):
         response, ok = check_success(self, "AT+PCRYPT=?")
@@ -1157,9 +1153,7 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+PKEY={key}")
             if ok:
                 return response
-        else:
-            logging.warning("Key must be exactly 16 hexadecimal characters")
-            return None
+        logging.warning("Key must be exactly 16 hexadecimal characters")
 
     def get_p2p_crypt_iv(self):
         response, ok = check_success(self, "AT+CRYPIV=?")
@@ -1171,16 +1165,22 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+CRYPIV={key}")
             if ok:
                 return response
-        else:
-            logging.warning("CryptIV key must be exactly 32 hexadecimal characters")
-            return None
+        logging.warning("CryptIV key must be exactly 32 hexadecimal characters")
 
     def get_p2p_params(self):
         response, ok = check_success(self, "AT+P2P=?")
         if ok:
             return response
 
-    def set_p2p_params(self, freq: int = 868000000, sf: int = 7, bandwidth: int = 125, code_rate: int = 0, preamble_len: int = 8, tx_power: int = 14)
+    def set_p2p_params(
+        self,
+        freq: int = 868000000,
+        sf: int = 7,
+        bandwidth: int = 125,
+        code_rate: int = 0,
+        preamble_len: int = 8,
+        tx_power: int = 14,
+    ):
         if not 150000000 <= freq <= 960000000:
             logging.warning("Frequency must be between 150 MHz and 960 MHz")
             return None
@@ -1193,14 +1193,17 @@ class RUI3Node(serial.Serial):
         if code_rate not in (0, 1, 2, 3):
             logging.warning("Code rate must be either 0, 1, 2 or 3")
             return None
-        if not 2<= preamble_len <= 65535:
+        if not 2 <= preamble_len <= 65535:
             logging.warning("Preamble length must be between 2 and 65535")
             return None
         if not 5 <= tx_power <= 22:
             logging.warning("TX Power must be between 5 and 22")
             return None
-        
-        response, ok = check_success(self, f"AT+P2P={freq}:{sf}:{bandwidth}:{code_rate}:{preamble_len}:{tx_power}")
+
+        response, ok = check_success(
+            self,
+            f"AT+P2P={freq}:{sf}:{bandwidth}:{code_rate}:{preamble_len}:{tx_power}",
+        )
         if ok:
             return response
 
@@ -1243,7 +1246,7 @@ class RUI3Node(serial.Serial):
         response, ok = check_success(self, "AT+TXOUTPUTPOWER=?")
         if ok:
             return response
-    
+
     def set_p2p_tx_out_power(self, tx_out: int):
         if not 5 <= tx_out <= 22:
             logging.warning("TX out power must be between 5 and 22")
@@ -1258,7 +1261,7 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_p2p_bandwidth(self, band: int):
-        if not 0<= band <= 9:
+        if not 0 <= band <= 9:
             logging.warning("Bandwidth must be between 0 and 9")
             return None
         response, ok = check_success(self, f"AT+basicConfig={band}")
@@ -1288,7 +1291,7 @@ class RUI3Node(serial.Serial):
             logging.warning("Coding rate must be either 0, 1, 2 or 3")
             return None
         response, ok = check_success(self, f"AT+CODINGRATE={code_rate}")
-        if ok: 
+        if ok:
             return response
 
     def get_p2p_preamble_length_2(self):
@@ -1310,8 +1313,8 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_p2p_symbol_timeout(self, timeout: int):
-        if not 0 <= timeout <= 248
-            get_p2p_symbol_timeout.warning("Symbol timeout must be between 0 and 248")
+        if not 0 <= timeout <= 248:
+            logging.warning("Symbol timeout must be between 0 and 248")
             return None
         response, ok = check_success(self, f"AT+SYMBOLTIMEOUT={timeout}")
         if ok:
@@ -1329,7 +1332,6 @@ class RUI3Node(serial.Serial):
             return response
 
     # RF TEST
-    
 
     def rf_rssi_test(self):
         response, ok = check_success(self, "AT+TRSSI=?")
