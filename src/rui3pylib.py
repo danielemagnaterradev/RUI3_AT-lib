@@ -56,19 +56,23 @@ class RUI3Node(serial.Serial):
         self.baudrate = baudrate
         self.timeout = timeout
         if port is None:
-            for interface in comports():
-                try:
-                    self.port = interface.device
-                    self.open()
-                    if self.try_connect():
-                        logging.info(f"Connected to port {self.port}")
-                        break
-                    else:
-                        self.close()
-                except serial.serialutil.SerialException as e:
-                    logging.info(f"SerialException on {self.port}: {e}")
-                    if self.is_open:
-                        self.close()
+            while True:
+                for interface in comports():
+                    try:
+                        self.port = interface.device
+                        self.open()
+                        if self.try_connect():
+                            logging.info(f"Connected to port {self.port}")
+                            break
+                        else:
+                            self.close()
+                            continue
+                    except serial.serialutil.SerialException as e:
+                        logging.info(f"SerialException on {self.port}: {e}")
+                        if self.is_open:
+                            self.close()
+                            break
+                break
         else:
             try:
                 self.open()
