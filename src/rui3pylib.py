@@ -1304,7 +1304,7 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_p2p_preamble_length_2(self, preamble_len: int):
-        if 5 <= preamble_len <= 65535:
+        if not 5 <= preamble_len <= 65535:
             logging.warning("Preamble length must be between 5 and 65535")
             return None
         response, ok = check_success(self, f"AT+PREAMBLELENGTH={preamble_len}")
