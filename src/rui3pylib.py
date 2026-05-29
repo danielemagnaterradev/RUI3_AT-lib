@@ -1174,3 +1174,179 @@ class RUI3Node(serial.Serial):
         else:
             logging.warning("CryptIV key must be exactly 32 hexadecimal characters")
             return None
+
+    def get_p2p_params(self):
+        response, ok = check_success(self, "AT+P2P=?")
+        if ok:
+            return response
+
+    def set_p2p_params(self, freq: int = 868000000, sf: int = 7, bandwidth: int = 125, code_rate: int = 0, preamble_len: int = 8, tx_power: int = 14)
+        if not 150000000 <= freq <= 960000000:
+            logging.warning("Frequency must be between 150 MHz and 960 MHz")
+            return None
+        if not 6 <= sf <= 12:
+            logging.warning("Spreading factor must be between 6 and 12")
+            return None
+        if not 0 <= bandwidth <= 9:
+            logging.warning("Bandwidth must be between 0 and 9")
+            return None
+        if code_rate not in (0, 1, 2, 3):
+            logging.warning("Code rate must be either 0, 1, 2 or 3")
+            return None
+        if not 2<= preamble_len <= 65535:
+            logging.warning("Preamble length must be between 2 and 65535")
+            return None
+        if not 5 <= tx_power <= 22:
+            logging.warning("TX Power must be between 5 and 22")
+            return None
+        
+        response, ok = check_success(self, f"AT+P2P={freq}:{sf}:{bandwidth}:{code_rate}:{preamble_len}:{tx_power}")
+        if ok:
+            return response
+
+    def get_p2p_iq_inv(self):
+        response, ok = check_success(self, "AT+IQINVER=?")
+        if ok:
+            return response
+
+    def set_p2p_iq_inv(self, on: bool):
+        mode = 1 if on else 0
+        response, ok = check_success(self, f"AT+IQINVER={mode}")
+        if ok:
+            return response
+
+    def get_p2p_syncword(self):
+        response, ok = check_success(self, "AT+SYNCWORD=?")
+        if ok:
+            return response
+
+    def set_p2p_syncword(self, word: str):
+        if all(char in string.hexdigits for char in word) and len(word) == 4:
+            response, ok = check_success(self, f"AT+SYNCWORD={word}")
+            if ok:
+                return response
+        else:
+            logging.warning("Syncword must be exactly 4 hexadecimal characters")
+            return None
+
+    def get_p2p_rf_freq(self):
+        response, ok = check_success(self, "AT+RFFREQUENCY=?")
+        if ok:
+            return response
+
+    def set_p2p_rf_freq(self, freq: int):
+        response, ok = check_success(self, f"AT+RFFREQUENCY={freq}")
+        if ok:
+            return response
+
+    def get_p2p_tx_out_power(self):
+        response, ok = check_success(self, "AT+TXOUTPUTPOWER=?")
+        if ok:
+            return response
+    
+    def set_p2p_tx_out_power(self, tx_out: int):
+        if not 5 <= tx_out <= 22:
+            logging.warning("TX out power must be between 5 and 22")
+            return None
+        response, ok = check_success(self, f"AT+TXOUTPUTPOWER={tx_out}")
+        if ok:
+            return response
+
+    def get_p2p_bandwidth(self):
+        response, ok = check_success(self, "AT+BANDWIDTH=?")
+        if ok:
+            return response
+
+    def set_p2p_bandwidth(self, band: int):
+        if not 0<= band <= 9:
+            logging.warning("Bandwidth must be between 0 and 9")
+            return None
+        response, ok = check_success(self, f"AT+basicConfig={band}")
+        if ok:
+            return response
+
+    def get_p2p_spread_factor(self):
+        response, ok = check_success(self, "AT+SPREADINGFACTOR=?")
+        if ok:
+            return response
+
+    def set_p2p_spread_factor(self, sf: int):
+        if not 5 <= sf <= 12:
+            logging.warning("Spreading Facotr must be between 5 and 12")
+            return None
+        response, ok = check_success(self, f"AT+SPREADINGFACTOR={sf}")
+        if ok:
+            return response
+
+    def get_p2p_coding_rate(self):
+        response, ok = check_success(self, "AT+CODINGRATE=?")
+        if ok:
+            return response
+
+    def set_p2p_coding_rate(self, code_rate: int):
+        if code_rate not in (0, 1, 2, 3):
+            logging.warning("Coding rate must be either 0, 1, 2 or 3")
+            return None
+        response, ok = check_success(self, f"AT+CODINGRATE={code_rate}")
+        if ok: 
+            return response
+
+    def get_p2p_preamble_length_2(self):
+        response, ok = check_success(self, "AT+PREAMBLELENGTH=?")
+        if ok:
+            return response
+
+    def set_p2p_preamble_length_2(self, preamble_len: int):
+        if 5 <= preamble_len <= 65535:
+            logging.warning("Preamble length must be between 5 and 65535")
+            return None
+        response, ok = check_success(self, f"AT+PREAMBLELENGTH={preamble_len}")
+        if ok:
+            return response
+
+    def get_p2p_symbol_timeout(self):
+        response, ok = check_success(self, "AT+SYMBOLTIMEOUT=?")
+        if ok:
+            return response
+
+    def set_p2p_symbol_timeout(self, timeout: int):
+        if not 0 <= timeout <= 248
+            get_p2p_symbol_timeout.warning("Symbol timeout must be between 0 and 248")
+            return None
+        response, ok = check_success(self, f"AT+SYMBOLTIMEOUT={timeout}")
+        if ok:
+            return response
+
+    def get_p2p_fixed_length_payload(self):
+        response, ok = check_success(self, "AT+FIXEDLENGTHPAYLOAD=?")
+        if ok:
+            return response
+
+    def set_p2p_fixed_length_payload(self, on: bool):
+        mode = 1 if on else 0
+        response, ok = check_success(self, f"AT+FIXEDLENGTHPAYLOAD={mode}")
+        if ok:
+            return response
+
+    # RF TEST
+    
+
+    def rf_rssi_test(self):
+        response, ok = check_success(self, "AT+TRSSI=?")
+        if ok:
+            return response
+
+    def rf_tone_test(self):
+        response, ok = check_success(self, "AT+TTONE")
+        if ok:
+            return response
+
+    def set_rf_tx_test_packet_number(self, number: int):
+        response, ok = check_success(self, f"AT+TTX={number}")
+        if ok:
+            return response
+
+    def set_rf_rx_test_packet_number(self, number: int):
+        response, ok = check_success(self, f"AT+TRX={number}")
+        if ok:
+            return response
