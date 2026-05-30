@@ -482,9 +482,8 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+DEVEUI={deveui}")
             if ok:
                 return response
-        else:
-            logging.warning("Device EUI must be exactly 16 hexdigits")
-            return None
+        logging.warning("Device EUI must be exactly 16 hexdigits")
+        return None
 
     def get_app_eui(self) -> str | None:
         """AT+APPEUI=? — return the 8-byte application EUI as 16 hex characters."""
@@ -501,9 +500,8 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+APPEUI={appeui}")
             if ok:
                 return response
-        else:
-            logging.warning("App EUI must be exactly 16 hexdigits")
-            return None
+        logging.warning("App EUI must be exactly 16 hexdigits")
+        return None
 
     def get_app_key(self) -> str | None:
         """AT+APPKEY=? — return the 16-byte application key as 32 hex characters (OTAA)."""
@@ -520,9 +518,8 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+APPKEY={appkey}")
             if ok:
                 return response
-        else:
-            logging.warning("App key must be exactly 32 hexdigits")
-            return None
+        logging.warning("App key must be exactly 32 hexdigits")
+        return None
 
     def get_dev_addr(self) -> str | None:
         """AT+DEVADDR=? — return the 4-byte device address as 8 hex characters (ABP)."""
@@ -539,9 +536,8 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+DEVADDR={devaddr}")
             if ok:
                 return response
-        else:
-            logging.warning("Device address must be exactly 8 hexdigits")
-            return None
+        logging.warning("Device address must be exactly 8 hexdigits")
+        return None
 
     def get_app_s_key(self) -> str | None:
         """AT+APPSKEY=? — return the 16-byte application session key as 32 hex characters (ABP)."""
@@ -558,9 +554,8 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+APPSKEY={appskey}")
             if ok:
                 return response
-        else:
-            logging.warning("App security key must be exactly 32 hexdigits")
-            return None
+        logging.warning("App security key must be exactly 32 hexdigits")
+        return None
 
     def get_network_s_key(self) -> str | None:
         """AT+NWKSKEY=? — return the 16-byte network session key as 32 hex characters (ABP)."""
@@ -577,9 +572,8 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+NWKSKEY={netskey}")
             if ok:
                 return response
-        else:
-            logging.warning("Network security key must be exactly 32 hexdigits")
-            return None
+        logging.warning("Network security key must be exactly 32 hexdigits")
+        return None
 
     def get_network_id(self) -> str | None:
         """AT+NETID=? — return the 3-byte network identifier as 6 hex characters."""
@@ -596,9 +590,8 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+NETID={netid}")
             if ok:
                 return response
-        else:
-            logging.warning("Network ID must be exactly 6 hexdigits")
-            return None
+        logging.warning("Network ID must be exactly 6 hexdigits")
+        return None
 
     def get_multicast_root_key(self) -> str | None:
         """AT+MCROOTKEY=? — return the multicast root key (read-only).
