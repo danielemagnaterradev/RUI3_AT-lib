@@ -167,71 +167,89 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def reset(self):
-        # ATZ does not return OK: the module resets immediately without
-        # a return code. send_command is used directly instead of
-        # check_success.
+    def reset(self) -> None:
+        """ATZ — reset the module immediately.
+
+        The module resets without returning an OK code, so send_command is
+        used directly.  All volatile settings are lost; persistent settings
+        (flash) are retained.
+        """
         send_command(self, "ATZ")
         logging.info("Module reset")
 
-    def restore_default(self):
+    def restore_default(self) -> str | None:
+        """ATR — restore all parameters to factory default values."""
         response, ok = check_success(self, "ATR")
         if ok:
             logging.info("Restored default values")
             return response
 
-    def get_serial_number(self):
+    def get_serial_number(self) -> str | None:
+        """AT+SN=? — return the device serial number."""
         response, ok = check_success(self, "AT+SN=?")
         if ok:
             return response
 
-    def get_battery_level(self):
+    def get_battery_level(self) -> str | None:
+        """AT+BAT=? — return the current battery voltage in mV."""
         response, ok = check_success(self, "AT+BAT=?")
         if ok:
             return response
 
-    def get_build_time(self):
+    def get_build_time(self) -> str | None:
+        """AT+BUILDTIME=? — return the firmware build timestamp."""
         response, ok = check_success(self, "AT+BUILDTIME=?")
         if ok:
             return response
 
-    def get_repo_info(self):
+    def get_repo_info(self) -> str | None:
+        """AT+REPOINFO=? — return the firmware repository commit information."""
         response, ok = check_success(self, "AT+REPOINFO=?")
         if ok:
             return response
 
-    def get_firm_version(self):
+    def get_firm_version(self) -> str | None:
+        """AT+VER=? — return the RUI3 firmware version string."""
         response, ok = check_success(self, "AT+VER=?")
         if ok:
             return response
 
-    def get_at_version(self):
+    def get_at_version(self) -> str | None:
+        """AT+CLIVER=? — return the AT command set version string."""
         response, ok = check_success(self, "AT+CLIVER=?")
         if ok:
             return response
 
-    def get_api_version(self):
+    def get_api_version(self) -> str | None:
+        """AT+APIVER=? — return the RUI3 API version string."""
         response, ok = check_success(self, "AT+APIVER=?")
         if ok:
             return response
 
-    def get_hw_model(self):
+    def get_hw_model(self) -> str | None:
+        """AT+HWMODEL=? — return the hardware model identifier string."""
         response, ok = check_success(self, "AT+HWMODEL=?")
         if ok:
             return response
 
-    def get_hw_id(self):
+    def get_hw_id(self) -> str | None:
+        """AT+HWID=? — return the hardware chip ID."""
         response, ok = check_success(self, "AT+HWID=?")
         if ok:
             return response
 
-    def get_device_alias(self):
+    def get_device_alias(self) -> str | None:
+        """AT+ALIAS=? — return the user-defined device alias (1-16 characters)."""
         response, ok = check_success(self, "AT+ALIAS=?")
         if ok:
             return response
 
-    def set_device_alias(self, alias: str):
-        # Must be between 1 and 16 characters.
+    def set_device_alias(self, alias: str) -> str | None:
+        """AT+ALIAS=<alias> — set a user-defined device alias.
+
+        *alias* must be between 1 and 16 characters.  The alias is stored in
+        flash and survives resets.
+        """
         if not 1 <= len(alias) <= 16:
             logging.warning("Alias must be between 1 and 16 characters")
             return None
@@ -239,20 +257,25 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_system_voltage(self):
+    def get_system_voltage(self) -> str | None:
+        """AT+SYSV=? — return the current system supply voltage in mV."""
         response, ok = check_success(self, "AT+SYSV=?")
         if ok:
             return response
 
-    def get_ble_mac(self):
+    def get_ble_mac(self) -> str | None:
+        """AT+BLEMAC=? — return the BLE MAC address in colon-separated hex format."""
         response, ok = check_success(self, "AT+BLEMAC=?")
         if ok:
             return response
 
-    def set_ble_mac(self, mac: str):
-        # Input must be exactly 12 hexadecimal characters
-        # (e.g. 001122334455), which are formatted internally as
-        # colon-separated pairs (e.g. 00:11:22:33:44:55).
+    def set_ble_mac(self, mac: str) -> str | None:
+        """AT+BLEMAC=<mac> — set the BLE MAC address.
+
+        *mac* must be exactly 12 hexadecimal characters without separators
+        (e.g. "001122334455").  The library converts it to the colon-separated
+        format required by the firmware (e.g. "00:11:22:33:44:55").
+        """
         if all(char in string.hexdigits for char in mac) and len(mac) == 12:
             formatted = ":".join(mac[i : i + 2] for i in range(0, 12, 2))
             response, ok = check_success(self, f"AT+BLEMAC={formatted.lower()}")
@@ -261,7 +284,12 @@ class RUI3Node(serial.Serial):
         else:
             logging.warning("Invalid format: it should be like 001122334455")
 
-    def get_boot_ver(self):
+    def get_boot_ver(self) -> str | None:
+        """AT+BOOTVER=? — return the bootloader version (normal mode).
+
+        This command is available in normal operating mode.  For the equivalent
+        command in boot mode, use get_bootloader_ver().
+        """
         response, ok = check_success(self, "AT+BOOTVER=?")
         if ok:
             return response
@@ -271,9 +299,9 @@ class RUI3Node(serial.Serial):
     def at_sleep(self, duration_ms: int) -> str | None:
         """AT+SLEEP=<ms> — enter sleep mode for *duration_ms* milliseconds.
 
-        Valid range: 1 ~ (2^32 - 1).  Call with no argument equivalent
-        (AT+SLEEP with no parameter) is not exposed here because it triggers
-        indefinite sleep; use set_low_power_mode(True) for that instead.
+        Valid range: 1 ~ (2^32 - 1) ms.  The AT+SLEEP command with no parameter
+        (indefinite sleep) is not exposed here; use set_low_power_mode(True)
+        for persistent low-power mode instead.
         """
         if duration_ms < 1:
             logging.warning("Sleep duration must be at least 1 ms")
@@ -282,29 +310,41 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_low_power_mode(self):
+    def get_low_power_mode(self) -> str | None:
+        """AT+LPM=? — return the current low-power mode state (0 = off, 1 = on)."""
         response, ok = check_success(self, "AT+LPM=?")
         if ok:
             return response
 
-    def set_low_power_mode(self, on: bool):
+    def set_low_power_mode(self, on: bool) -> str | None:
+        """AT+LPM=<mode> — enable (True) or disable (False) low-power mode.
+
+        When enabled, the module enters sleep between AT commands to reduce
+        current consumption.
+        """
         mode = 1 if on else 0
         response, ok = check_success(self, f"AT+LPM={mode}")
         if ok:
             return response
 
-    def get_low_power_mode_level(self):
-        # Only effective on RAK3172; has no effect on other modules.
-        # Stop1 Mode allows wakeup via both UART1 and UART2.
-        # Stop2 Mode is more power-efficient but only UART2 can wake
-        # the device.
+    def get_low_power_mode_level(self) -> str | None:
+        """AT+LPMLVL=? — return the low-power sleep level (RAK3172 only).
+
+        Only effective on RAK3172; has no effect on other modules.
+        Returns 1 (STOP1) or 2 (STOP2).
+        """
         response, ok = check_success(self, "AT+LPMLVL=?")
         if ok:
             return response
 
-    def set_low_power_mode_level(self, level: int):
-        # Only effective on RAK3172; has no effect on other modules.
-        # level 1 = STOP1 Mode, level 2 = STOP2 Mode
+    def set_low_power_mode_level(self, level: int) -> str | None:
+        """AT+LPMLVL=<level> — set the low-power sleep level (RAK3172 only).
+
+        Only effective on RAK3172; has no effect on other modules.
+
+        level 1 — STOP1 mode: wakeup via both UART1 and UART2.
+        level 2 — STOP2 mode: more power-efficient; wakeup via UART2 only.
+        """
         if level not in (1, 2):
             logging.warning("Level must be either 1 (STOP1) or 2 (STOP2)")
             return None
@@ -314,18 +354,21 @@ class RUI3Node(serial.Serial):
 
     # SERIAL AT COMMANDS
 
-    def lock_serial(self):
-        # Locks the serial port; a password is required to unlock it.
-        # The default password is 00000000 and can be changed with
-        # set_password(). AT+LOCK does not return OK.
+    def lock_serial(self) -> None:
+        """AT+LOCK — lock the serial port until the correct password is entered.
+
+        The default password is "00000000" and can be changed with
+        set_password().  AT+LOCK does not return OK; send_command is used
+        directly.
+        """
         _ = send_command(self, "AT+LOCK")
         logging.info(f"Serial port {self.port} is now locked")
 
     def set_password(self, password: str) -> str | None:
         """AT+PWORD=<password> — set the serial port locking password.
 
-        The password must be 1-8 printable ASCII characters (any printable
-        character is accepted by the firmware).
+        *password* must be 1-8 printable ASCII characters.  The new password
+        takes effect immediately and is stored in flash.
         """
         if not 1 <= len(password) <= 8:
             logging.warning("Password must be between 1 and 8 characters")
@@ -337,26 +380,35 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_baud_rate(self):
+    def get_baud_rate(self) -> str | None:
+        """AT+BAUD=? — return the current serial baud rate."""
         response, ok = check_success(self, "AT+BAUD=?")
         if ok:
             return response
 
-    def set_baud_rate(self, baudrate: int):
-        # The configured baud rate is retained even after reset or
-        # power recycle.
+    def set_baud_rate(self, baudrate: int) -> str | None:
+        """AT+BAUD=<baudrate> — set the serial baud rate.
+
+        The configured baud rate is stored in flash and persists across resets
+        and power cycles.  The new rate takes effect after the next reset.
+        """
         response, ok = check_success(self, f"AT+BAUD={baudrate}")
         if ok:
             return response
 
-    def switch_to_at_mode(self):
+    def switch_to_at_mode(self) -> str | None:
+        """AT+ATM — switch the module to AT command mode.
+
+        Used when the module is running in a custom firmware mode; this
+        command returns it to the standard AT command interface.
+        """
         response, ok = check_success(self, "AT+ATM")
         if ok:
             return response
 
     # BOOTLOADER COMMANDS
-    # All methods in this section except set_boot_mode() only work
-    # while in boot mode.
+    # All methods in this section except set_boot_mode() only work while
+    # the device is in boot mode (entered via set_boot_mode()).
 
     def set_boot_mode(self) -> str:
         """AT+BOOT — enter bootloader mode for firmware upgrade.
@@ -371,7 +423,7 @@ class RUI3Node(serial.Serial):
         return response
 
     def get_bootloader_ver(self) -> str:
-        """AT+VERSION — get the bootloader version string (boot mode only).
+        """AT+VERSION — return the bootloader version string (boot mode only).
 
         This command is only available while the device is in boot mode
         (entered via set_boot_mode()).  The doc also accepts AT+VER=? in
@@ -381,34 +433,51 @@ class RUI3Node(serial.Serial):
         """
         return send_command(self, "AT+VERSION")
 
-    def get_bootloader_status(self):
-        # AT+BOOTSTATUS does not return OK; send_command is used
-        # directly.
+    def get_bootloader_status(self) -> str:
+        """AT+BOOTSTATUS — return the current bootloader status (boot mode only).
+
+        Does not return an OK code; send_command is used directly.
+        """
         return send_command(self, "AT+BOOTSTATUS")
 
-    def at_run(self):
-        # AT+RUN does not return OK; send_command is used directly.
+    def at_run(self) -> str:
+        """AT+RUN — exit bootloader mode and run the application firmware (boot mode only).
+
+        Does not return an OK code; send_command is used directly.
+        """
         return send_command(self, "AT+RUN")
 
-    def boot_reset(self):
-        # AT+RESET does not return OK; send_command is used directly.
+    def boot_reset(self) -> str:
+        """AT+RESET — reset the device from within bootloader mode (boot mode only).
+
+        Does not return an OK code; send_command is used directly.
+        """
         return send_command(self, "AT+RESET")
 
-    def boot_update(self):
-        # Starts Y-modem receiving process.
-        # AT+UPDATE does not return OK; send_command is used directly.
+    def boot_update(self) -> str:
+        """AT+UPDATE — start the Y-Modem firmware receive process (boot mode only).
+
+        Initiates a Y-Modem transfer session on the serial port.  Send the
+        firmware binary using a Y-Modem-compatible terminal after calling this
+        method.  Does not return an OK code; send_command is used directly.
+        """
         return send_command(self, "AT+UPDATE")
 
     # LORAWAN KEYS AND IDs
+    # All key/EUI/address setters expect plain ASCII hex strings, MSB first,
+    # with no colons, spaces, or 0x prefixes (see module docstring).
 
-    def get_device_eui(self):
+    def get_device_eui(self) -> str | None:
+        """AT+DEVEUI=? — return the 8-byte device EUI as 16 hex characters."""
         response, ok = check_success(self, "AT+DEVEUI=?")
         if ok:
             return response
 
-    def set_device_eui(self, deveui: str):
-        # Must be exactly 16 hexadecimal characters, representing
-        # 8 bytes (MSB first).
+    def set_device_eui(self, deveui: str) -> str | None:
+        """AT+DEVEUI=<deveui> — set the 8-byte device EUI.
+
+        *deveui* must be exactly 16 hexadecimal characters (MSB first).
+        """
         if all(char in string.hexdigits for char in deveui) and len(deveui) == 16:
             response, ok = check_success(self, f"AT+DEVEUI={deveui}")
             if ok:
@@ -417,15 +486,17 @@ class RUI3Node(serial.Serial):
             logging.warning("Device EUI must be exactly 16 hexdigits")
             return None
 
-    # The format rules above (only hexadecimal characters, MSB first)
-    # apply to all setter methods in this section.
-
-    def get_app_eui(self):
+    def get_app_eui(self) -> str | None:
+        """AT+APPEUI=? — return the 8-byte application EUI as 16 hex characters."""
         response, ok = check_success(self, "AT+APPEUI=?")
         if ok:
             return response
 
-    def set_app_eui(self, appeui: str):
+    def set_app_eui(self, appeui: str) -> str | None:
+        """AT+APPEUI=<appeui> — set the 8-byte application EUI (JoinEUI in LoRaWAN 1.1).
+
+        *appeui* must be exactly 16 hexadecimal characters (MSB first).
+        """
         if all(char in string.hexdigits for char in appeui) and len(appeui) == 16:
             response, ok = check_success(self, f"AT+APPEUI={appeui}")
             if ok:
@@ -434,12 +505,17 @@ class RUI3Node(serial.Serial):
             logging.warning("App EUI must be exactly 16 hexdigits")
             return None
 
-    def get_app_key(self):
+    def get_app_key(self) -> str | None:
+        """AT+APPKEY=? — return the 16-byte application key as 32 hex characters (OTAA)."""
         response, ok = check_success(self, "AT+APPKEY=?")
         if ok:
             return response
 
-    def set_app_key(self, appkey: str):
+    def set_app_key(self, appkey: str) -> str | None:
+        """AT+APPKEY=<appkey> — set the 16-byte application key (OTAA).
+
+        *appkey* must be exactly 32 hexadecimal characters (MSB first).
+        """
         if all(char in string.hexdigits for char in appkey) and len(appkey) == 32:
             response, ok = check_success(self, f"AT+APPKEY={appkey}")
             if ok:
@@ -448,12 +524,17 @@ class RUI3Node(serial.Serial):
             logging.warning("App key must be exactly 32 hexdigits")
             return None
 
-    def get_dev_addr(self):
+    def get_dev_addr(self) -> str | None:
+        """AT+DEVADDR=? — return the 4-byte device address as 8 hex characters (ABP)."""
         response, ok = check_success(self, "AT+DEVADDR=?")
         if ok:
             return response
 
-    def set_dev_addr(self, devaddr: str):
+    def set_dev_addr(self, devaddr: str) -> str | None:
+        """AT+DEVADDR=<devaddr> — set the 4-byte device address (ABP).
+
+        *devaddr* must be exactly 8 hexadecimal characters (MSB first).
+        """
         if all(char in string.hexdigits for char in devaddr) and len(devaddr) == 8:
             response, ok = check_success(self, f"AT+DEVADDR={devaddr}")
             if ok:
@@ -462,12 +543,17 @@ class RUI3Node(serial.Serial):
             logging.warning("Device address must be exactly 8 hexdigits")
             return None
 
-    def get_app_s_key(self):
+    def get_app_s_key(self) -> str | None:
+        """AT+APPSKEY=? — return the 16-byte application session key as 32 hex characters (ABP)."""
         response, ok = check_success(self, "AT+APPSKEY=?")
         if ok:
             return response
 
-    def set_app_s_key(self, appskey: str):
+    def set_app_s_key(self, appskey: str) -> str | None:
+        """AT+APPSKEY=<appskey> — set the 16-byte application session key (ABP).
+
+        *appskey* must be exactly 32 hexadecimal characters (MSB first).
+        """
         if all(char in string.hexdigits for char in appskey) and len(appskey) == 32:
             response, ok = check_success(self, f"AT+APPSKEY={appskey}")
             if ok:
@@ -476,12 +562,17 @@ class RUI3Node(serial.Serial):
             logging.warning("App security key must be exactly 32 hexdigits")
             return None
 
-    def get_network_s_key(self):
+    def get_network_s_key(self) -> str | None:
+        """AT+NWKSKEY=? — return the 16-byte network session key as 32 hex characters (ABP)."""
         response, ok = check_success(self, "AT+NWKSKEY=?")
         if ok:
             return response
 
-    def set_network_s_key(self, netskey: str):
+    def set_network_s_key(self, netskey: str) -> str | None:
+        """AT+NWKSKEY=<netskey> — set the 16-byte network session key (ABP).
+
+        *netskey* must be exactly 32 hexadecimal characters (MSB first).
+        """
         if all(char in string.hexdigits for char in netskey) and len(netskey) == 32:
             response, ok = check_success(self, f"AT+NWKSKEY={netskey}")
             if ok:
@@ -490,12 +581,17 @@ class RUI3Node(serial.Serial):
             logging.warning("Network security key must be exactly 32 hexdigits")
             return None
 
-    def get_network_id(self):
+    def get_network_id(self) -> str | None:
+        """AT+NETID=? — return the 3-byte network identifier as 6 hex characters."""
         response, ok = check_success(self, "AT+NETID=?")
         if ok:
             return response
 
-    def set_network_id(self, netid: str):
+    def set_network_id(self, netid: str) -> str | None:
+        """AT+NETID=<netid> — set the 3-byte network identifier.
+
+        *netid* must be exactly 6 hexadecimal characters (MSB first).
+        """
         if all(char in string.hexdigits for char in netid) and len(netid) == 6:
             response, ok = check_success(self, f"AT+NETID={netid}")
             if ok:
@@ -504,34 +600,43 @@ class RUI3Node(serial.Serial):
             logging.warning("Network ID must be exactly 6 hexdigits")
             return None
 
-    def get_multicast_root_key(self):
+    def get_multicast_root_key(self) -> str | None:
+        """AT+MCROOTKEY=? — return the multicast root key (read-only).
+
+        This key is read-only and derived internally by the firmware; there is
+        no corresponding setter command in the RUI3 AT command set.
+        """
         response, ok = check_success(self, "AT+MCROOTKEY=?")
         if ok:
             return response
 
     # LORAWAN JOINING AND SENDING
 
-    def get_confirm_mode(self):
+    def get_confirm_mode(self) -> str | None:
+        """AT+CFM=? — return the current uplink confirmation mode (0 = unconfirmed, 1 = confirmed)."""
         response, ok = check_success(self, "AT+CFM=?")
         if ok:
             return response
 
-    def set_confirm_mode(self, on: bool):
-        # Configures uplink payload as confirmed (True) or unconfirmed
-        # (False).
+    def set_confirm_mode(self, on: bool) -> str | None:
+        """AT+CFM=<mode> — configure uplink payload as confirmed (True) or unconfirmed (False)."""
         mode = 1 if on else 0
         response, ok = check_success(self, f"AT+CFM={mode}")
         if ok:
             return response
 
-    def get_confirm_status(self):
-        # Returns the confirmation status of the last AT+SEND command
-        # (0 = failed, 1 = success).
+    def get_confirm_status(self) -> str | None:
+        """AT+CFS=? — return the confirmation status of the last AT+SEND uplink.
+
+        Returns 0 if the last confirmed uplink was not acknowledged by the
+        network server, or 1 if it was acknowledged.
+        """
         response, ok = check_success(self, "AT+CFS=?")
         if ok:
             return response
 
-    def get_join_params(self):
+    def get_join_params(self) -> str | None:
+        """AT+JOIN=? — return the current join parameters in the format <join>:<auto>:<interval>:<attempts>."""
         response, ok = check_success(self, "AT+JOIN=?")
         if ok:
             return response
@@ -542,13 +647,19 @@ class RUI3Node(serial.Serial):
         auto_join: bool = False,
         interval: int = 8,
         join_attempts: int = 0,
-    ):
-        # Sends AT+JOIN=<join>:<auto_join>:<interval>:<join_attempts>.
-        # This is an asynchronous command; OK means the join process
-        # has started. Use get_network_join_status() to poll for the
-        # result.
-        # interval: reattempt interval in seconds (7-255).
-        # join_attempts: number of join attempts (0-255); 0 = unlimited.
+    ) -> str | None:
+        """AT+JOIN=<join>:<auto_join>:<interval>:<attempts> — start the LoRaWAN join procedure.
+
+        This is an asynchronous command: OK means the join process has been
+        initiated, not that it succeeded.  Use get_network_join_status() to
+        poll for the result.
+
+        Args:
+            join:          True to start joining, False to stop an ongoing attempt.
+            auto_join:     True to enable automatic re-join on network loss.
+            interval:      Reattempt interval in seconds (7-255).
+            join_attempts: Number of join attempts before giving up (0-255, 0 = unlimited).
+        """
         join_bin = 1 if join else 0
         auto_join_bin = 1 if auto_join else 0
         if not 7 <= interval <= 255:
@@ -564,14 +675,20 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_network_join_mode(self):
+    def get_network_join_mode(self) -> str | None:
+        """AT+NJM=? — return the current network join mode (0 = ABP, 1 = OTAA)."""
         response, ok = check_success(self, "AT+NJM=?")
         if ok:
             return response
 
-    def set_network_join_mode(self, mode: int = 0):
-        # 0 = ABP mode
-        # 1 = OTAA mode
+    def set_network_join_mode(self, mode: int = 0) -> str | None:
+        """AT+NJM=<mode> — set the network join mode.
+
+        mode 0 — ABP (Activation By Personalisation): uses pre-provisioned
+                 session keys; no over-the-air join procedure required.
+        mode 1 — OTAA (Over-The-Air Activation): performs a join exchange
+                 with the network server to derive session keys.
+        """
         if mode not in (0, 1):
             logging.warning("Parameter must be either 0 (ABP) or 1 (OTAA)")
             return None
@@ -579,23 +696,30 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_network_join_status(self):
+    def get_network_join_status(self) -> str | None:
+        """AT+NJS=? — return the current network join status (0 = not joined, 1 = joined)."""
         response, ok = check_success(self, "AT+NJS=?")
         if ok:
             return response
 
-    def get_last_received_data(self):
-        # Returns the last received downlink as <port>:<payload>.
-        # Returns "0:" if no data has been received since the last
-        # call.
+    def get_last_received_data(self) -> str | None:
+        """AT+RECV=? — return the last received downlink payload.
+
+        The response format is <port>:<payload_hex>.  Returns "0:" if no
+        downlink has been received since the last time this command was called.
+        """
         response, ok = check_success(self, "AT+RECV=?")
         if ok:
             return response
 
-    def send_data(self, port: int, payload: str):
-        # Port number must be within 1 and 233.
-        # Payload must be within 2 and 500 digit length (even number),
-        # representing 1 to 256 hex bytes.
+    def send_data(self, port: int, payload: str) -> str | None:
+        """AT+SEND=<port>:<payload> — send a LoRaWAN uplink payload.
+
+        Args:
+            port:    LoRaWAN application port (1-233).
+            payload: Hexadecimal payload string; must be an even number of hex
+                     characters between 2 and 500 (i.e. 1 to 250 bytes).
+        """
         if not 1 <= port <= 233:
             logging.warning("Port must be between 1 and 233")
             return None
@@ -609,12 +733,19 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def send_long_packet_data(self, port: int, ack: bool, payload: str):
-        # Sends a long packet payload (up to 1000 bytes) on the given
-        # port. This is an asynchronous command; OK means the send
-        # process has started.
-        # Only supported for uplink packets and requires a WisGate Edge
-        # gateway.
+    def send_long_packet_data(self, port: int, ack: bool, payload: str) -> str | None:
+        """AT+LPSEND=<port>:<ack>:<payload> — send a long uplink payload (up to 1000 bytes).
+
+        This is an asynchronous command: OK means the send process has been
+        initiated, not that it has completed.  Only supported for uplink packets
+        and requires a WisGate Edge gateway.
+
+        Args:
+            port:    LoRaWAN application port (1-233).
+            ack:     True to request a confirmed uplink (ACK), False otherwise.
+            payload: Hexadecimal payload string; must be an even number of hex
+                     characters between 2 and 2000 (i.e. 1 to 1000 bytes).
+        """
         ack_bool = 1 if ack else 0
         if not 1 <= port <= 233:
             logging.warning("Port must be between 1 and 233")
@@ -629,12 +760,18 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_confirm_packet_retransmission(self):
+    def get_confirm_packet_retransmission(self) -> str | None:
+        """AT+RETY=? — return the number of retransmissions for confirmed uplinks (0-7)."""
         response, ok = check_success(self, "AT+RETY=?")
         if ok:
             return response
 
-    def set_confirm_packet_retransmission(self, tries: int):
+    def set_confirm_packet_retransmission(self, tries: int) -> str | None:
+        """AT+RETY=<tries> — set the number of retransmissions for confirmed uplinks.
+
+        *tries* must be between 0 and 7.  A value of 0 means no retransmissions
+        (the packet is sent exactly once).
+        """
         if not 0 <= tries <= 7:
             logging.warning("Invalid number: must be within 0 and 7")
             return None
@@ -644,23 +781,35 @@ class RUI3Node(serial.Serial):
 
     # LORAWAN NETWORK MANAGEMENT
 
-    def get_adaptive_rate(self):
+    def get_adaptive_rate(self) -> str | None:
+        """AT+ADR=? — return the adaptive data rate state (0 = disabled, 1 = enabled)."""
         response, ok = check_success(self, "AT+ADR=?")
         if ok:
             return response
 
-    def set_adaptive_rate(self, on: bool):
+    def set_adaptive_rate(self, on: bool) -> str | None:
+        """AT+ADR=<mode> — enable (True) or disable (False) adaptive data rate (ADR).
+
+        When enabled, the network server controls the data rate and TX power
+        to optimise range and airtime.  Disable only for mobile nodes.
+        """
         mode = 1 if on else 0
         response, ok = check_success(self, f"AT+ADR={mode}")
         if ok:
             return response
 
-    def get_lorawan_class(self):
+    def get_lorawan_class(self) -> str | None:
+        """AT+CLASS=? — return the current LoRaWAN device class (A, B, or C)."""
         response, ok = check_success(self, "AT+CLASS=?")
         if ok:
             return response
 
-    def set_lorawan_class(self, lorawan_class: str):
+    def set_lorawan_class(self, lorawan_class: str) -> str | None:
+        """AT+CLASS=<class> — set the LoRaWAN device class.
+
+        lorawan_class — "A" (default, lowest power), "B" (beacon-scheduled
+        downlinks), or "C" (continuous receive, highest power).
+        """
         if lorawan_class.upper() not in ("A", "B", "C"):
             logging.warning("LoRaWAN class must be either A, B or C")
             return None
@@ -668,27 +817,36 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_duty_cycle(self):
+    def get_duty_cycle(self) -> str | None:
+        """AT+DCS=? — return the duty cycle enforcement state (0 = disabled, 1 = enabled)."""
         response, ok = check_success(self, "AT+DCS=?")
         if ok:
             return response
 
-    def set_duty_cycle(self, on: bool):
-        # Duty cycle enforcement is mandatory in some regions
-        # (e.g. EU868); disable with caution.
+    def set_duty_cycle(self, on: bool) -> str | None:
+        """AT+DCS=<mode> — enable (True) or disable (False) duty cycle enforcement.
+
+        Duty cycle enforcement is mandatory in some regions (e.g. EU868).
+        Disable only when regulatory compliance is guaranteed by other means.
+        """
         mode = 1 if on else 0
         response, ok = check_success(self, f"AT+DCS={mode}")
         if ok:
             return response
 
-    def get_data_rate(self):
+    def get_data_rate(self) -> str | None:
+        """AT+DR=? — return the current uplink data rate index."""
         response, ok = check_success(self, "AT+DR=?")
         if ok:
             return response
 
-    def set_data_rate(self, data_rate: int):
-        # Valid range varies by region; 0-7 is the widest possible
-        # range across all supported bands.
+    def set_data_rate(self, data_rate: int) -> str | None:
+        """AT+DR=<dr> — set the uplink data rate index.
+
+        Valid range: 0-7.  The exact mapping of index to spreading factor and
+        bandwidth is region-dependent (e.g. DR0 = SF12/BW125 in EU868).
+        This setting is ignored when ADR is enabled.
+        """
         if not 0 <= data_rate <= 7:
             logging.warning("Data rate must be between 0 and 7")
             return None
@@ -696,12 +854,18 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_join_delay_rx_window_1(self):
+    def get_join_delay_rx_window_1(self) -> str | None:
+        """AT+JN1DL=? — return the join accept delay for RX window 1 in seconds (1-14)."""
         response, ok = check_success(self, "AT+JN1DL=?")
         if ok:
             return response
 
-    def set_join_delay_rx_window_1(self, value: int):
+    def set_join_delay_rx_window_1(self, value: int) -> str | None:
+        """AT+JN1DL=<value> — set the join accept delay for RX window 1.
+
+        *value* is in seconds; valid range is 1-14.  Must be strictly less
+        than the value set for RX window 2 (AT+JN2DL).
+        """
         if not 1 <= value <= 14:
             logging.warning("Value must be within 1 and 14")
             return None
@@ -709,14 +873,18 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_join_delay_rx_window_2(self):
+    def get_join_delay_rx_window_2(self) -> str | None:
+        """AT+JN2DL=? — return the join accept delay for RX window 2 in seconds (2-15)."""
         response, ok = check_success(self, "AT+JN2DL=?")
         if ok:
             return response
 
-    def set_join_delay_rx_window_2(self, value: int):
-        # Must be greater than the value set by
-        # set_join_delay_rx_window_1(); range is 2-15 seconds.
+    def set_join_delay_rx_window_2(self, value: int) -> str | None:
+        """AT+JN2DL=<value> — set the join accept delay for RX window 2.
+
+        *value* is in seconds; valid range is 2-15.  Must be strictly greater
+        than the value set for RX window 1 (AT+JN1DL).
+        """
         if not 2 <= value <= 15:
             logging.warning("Value must be within 2 and 15")
             return None
@@ -724,23 +892,36 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_public_network_mode(self):
+    def get_public_network_mode(self) -> str | None:
+        """AT+PNM=? — return the public/private network mode (0 = private, 1 = public)."""
         response, ok = check_success(self, "AT+PNM=?")
         if ok:
             return response
 
-    def set_public_network_mode(self, on: bool):
+    def set_public_network_mode(self, on: bool) -> str | None:
+        """AT+PNM=<mode> — set public (True) or private (False) network mode.
+
+        This controls the LoRa sync word: 0x34 for public networks (LoRaWAN),
+        0x12 for private networks.  Must match the gateway configuration.
+        """
         mode = 1 if on else 0
         response, ok = check_success(self, f"AT+PNM={mode}")
         if ok:
             return response
 
-    def get_receive_window_1_delay(self):
+    def get_receive_window_1_delay(self) -> str | None:
+        """AT+RX1DL=? — return the RX1 receive window delay in seconds (1-15)."""
         response, ok = check_success(self, "AT+RX1DL=?")
         if ok:
             return response
 
-    def set_receive_window_1_delay(self, value: int):
+    def set_receive_window_1_delay(self, value: int) -> str | None:
+        """AT+RX1DL=<value> — set the RX1 receive window delay.
+
+        *value* is in seconds; valid range is 1-15.  This is the delay from
+        the end of the uplink transmission to the opening of the first
+        downlink receive window.
+        """
         if not 1 <= value <= 15:
             logging.warning("Value must be between 1 and 15")
             return None
@@ -748,12 +929,18 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_receive_window_2_delay(self):
+    def get_receive_window_2_delay(self) -> str | None:
+        """AT+RX2DL=? — return the RX2 receive window delay in seconds (2-15)."""
         response, ok = check_success(self, "AT+RX2DL=?")
         if ok:
             return response
 
-    def set_receive_window_2_delay(self, value: int):
+    def set_receive_window_2_delay(self, value: int) -> str | None:
+        """AT+RX2DL=<value> — set the RX2 receive window delay.
+
+        *value* is in seconds; valid range is 2-15.  RX2 opens one second
+        after RX1 by default; this value must be greater than RX1DL.
+        """
         if not 2 <= value <= 15:
             logging.warning("Value must be between 2 and 15")
             return None
@@ -761,14 +948,20 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_receive_window_2_data_rate(self):
+    def get_receive_window_2_data_rate(self) -> str | None:
+        """AT+RX2DR=? — return the RX2 receive window data rate index."""
         response, ok = check_success(self, "AT+RX2DR=?")
         if ok:
             return response
 
-    def set_receive_window_2_data_rate(self, value: int):
-        # Valid range varies by region: 0-5 for EU/AS/KR/CN,
-        # 8-13 for US915/AU915/LA915.
+    def set_receive_window_2_data_rate(self, value: int) -> str | None:
+        """AT+RX2DR=<value> — set the RX2 receive window data rate index.
+
+        Valid range varies by region:
+            0-5  — EU868, AS923, KR920, CN470.
+            8-13 — US915, AU915, LA915.
+        Values 6 and 7 are not valid in any supported region.
+        """
         if not 0 <= value <= 13:
             logging.warning("Value must be between 0 and 13")
             return None
@@ -776,25 +969,36 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_receive_window_2_freq(self):
+    def get_receive_window_2_freq(self) -> str | None:
+        """AT+RX2FQ=? — return the RX2 receive window frequency in Hz."""
         response, ok = check_success(self, "AT+RX2FQ=?")
         if ok:
             return response
 
-    def set_receive_window_2_freq(self, freq: int):
+    def set_receive_window_2_freq(self, freq: int) -> str | None:
+        """AT+RX2FQ=<freq> — set the RX2 receive window frequency in Hz.
+
+        The default value is region-dependent (e.g. 869525000 Hz for EU868).
+        Changing this must match the network server configuration.
+        """
         response, ok = check_success(self, f"AT+RX2FQ={freq}")
         if ok:
             return response
 
-    def get_transmit_power(self):
+    def get_transmit_power(self) -> str | None:
+        """AT+TXP=? — return the current uplink TX power index (0 = maximum for region)."""
         response, ok = check_success(self, "AT+TXP=?")
         if ok:
             return response
 
-    def set_transmit_power(self, value: int):
-        # Valid range depends on region (0 = highest power):
-        #   EU433: 0-5 | EU868/CN470/KR920/AS923/RU864: 0-7
-        #   IN865: 0-10 | US915/AU915: 0-14
+    def set_transmit_power(self, value: int) -> str | None:
+        """AT+TXP=<value> — set the uplink TX power index.
+
+        Index 0 corresponds to the maximum legal power for the active region.
+        Valid upper bounds by region:
+            EU433 — 0-5  |  EU868 / CN470 / KR920 / AS923 / RU864 — 0-7
+            IN865 — 0-10 |  US915 / AU915 — 0-14
+        """
         if not 0 <= value <= 14:
             logging.warning("Value must be between 0 and 14")
             return None
@@ -802,16 +1006,19 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_link_check(self):
+    def get_link_check(self) -> str | None:
+        """AT+LINKCHECK=? — return the current link check mode (0, 1, or 2)."""
         response, ok = check_success(self, "AT+LINKCHECK=?")
         if ok:
             return response
 
-    def set_link_check(self, value: int):
-        # 0 - Disable link check
-        # 1 - Execute link check just once on the next payload uplink
-        # 2 - Module will automatically execute one-time link check
-        #     after every payload uplink
+    def set_link_check(self, value: int) -> str | None:
+        """AT+LINKCHECK=<value> — configure the LoRaWAN link check mechanism.
+
+        value 0 — disable link check.
+        value 1 — execute a single link check on the next uplink only.
+        value 2 — execute a link check automatically after every uplink.
+        """
         if value not in (0, 1, 2):
             logging.warning("Value must be either 0, 1 or 2")
             return None
@@ -819,65 +1026,102 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_listen_before_talk(self):
+    def get_listen_before_talk(self) -> str | None:
+        """AT+LBT=? — return the listen-before-talk state (0 = disabled, 1 = enabled)."""
         response, ok = check_success(self, "AT+LBT=?")
         if ok:
             return response
 
-    def set_listen_before_talk(self, on: bool):
+    def set_listen_before_talk(self, on: bool) -> str | None:
+        """AT+LBT=<mode> — enable (True) or disable (False) listen-before-talk (LBT).
+
+        LBT performs a channel scan before each transmission and aborts if the
+        channel is occupied.  Required for regulatory compliance in some regions
+        (e.g. AS923 in Japan).
+        """
         mode = 1 if on else 0
         response, ok = check_success(self, f"AT+LBT={mode}")
         if ok:
             return response
 
-    def get_listen_before_talk_rssi(self):
+    def get_listen_before_talk_rssi(self) -> str | None:
+        """AT+LBTRSSI=? — return the LBT RSSI threshold in dBm."""
         response, ok = check_success(self, "AT+LBTRSSI=?")
         if ok:
             return response
 
-    def set_listen_before_talk_rssi(self, value: int):
-        # Threshold RSSI level (in dBm) below which the channel is
-        # considered free.
+    def set_listen_before_talk_rssi(self, value: int) -> str | None:
+        """AT+LBTRSSI=<value> — set the LBT RSSI threshold in dBm.
+
+        If the measured channel RSSI is below *value*, the channel is
+        considered free and the transmission proceeds.  Typical values
+        are in the range -80 to -100 dBm.
+        """
         response, ok = check_success(self, f"AT+LBTRSSI={value}")
         if ok:
             return response
 
-    def get_listen_before_talk_scan_time(self):
+    def get_listen_before_talk_scan_time(self) -> str | None:
+        """AT+LBTSCANTIME=? — return the LBT channel scan duration in milliseconds."""
         response, ok = check_success(self, "AT+LBTSCANTIME=?")
         if ok:
             return response
 
-    def set_listen_before_talk_scan_time(self, value: int):
-        # Duration (in milliseconds) to scan the channel before
-        # transmitting.
+    def set_listen_before_talk_scan_time(self, value: int) -> str | None:
+        """AT+LBTSCANTIME=<value> — set the LBT channel scan duration in milliseconds.
+
+        The radio listens for *value* milliseconds before each transmission.
+        If energy is detected above the RSSI threshold, the TX is deferred.
+        """
         response, ok = check_success(self, f"AT+LBTSCANTIME={value}")
         if ok:
             return response
 
-    def get_time_req(self):
+    def get_time_req(self) -> str | None:
+        """AT+TIMEREQ=? — return the DeviceTimeReq state (0 = disabled, 1 = enabled)."""
         response, ok = check_success(self, "AT+TIMEREQ=?")
         if ok:
             return response
 
-    def set_time_req(self, on: bool):
+    def set_time_req(self, on: bool) -> str | None:
+        """AT+TIMEREQ=<mode> — enable (True) or disable (False) time synchronisation requests.
+
+        When enabled, the module sends a DeviceTimeReq MAC command on the next
+        uplink to synchronise its internal clock with the network server.
+        Use get_local_time() to read the resulting timestamp.
+        """
         mode = 1 if on else 0
         response, ok = check_success(self, f"AT+TIMEREQ={mode}")
         if ok:
             return response
 
-    def get_local_time(self):
+    def get_local_time(self) -> str | None:
+        """AT+LTIME=? — return the current local time after network synchronisation.
+
+        The time is expressed in UTC and is only valid after a successful
+        DeviceTimeReq exchange (see set_time_req()).
+        """
         response, ok = check_success(self, "AT+LTIME=?")
         if ok:
             return response
 
     # CLASS B MODE
+    # The following commands are only meaningful when the device is operating
+    # in LoRaWAN Class B mode (set via set_lorawan_class("B")).
 
-    def get_periodicity(self):
+    def get_periodicity(self) -> str | None:
+        """AT+PGSLOT=? — return the Class B ping slot periodicity index (0-7)."""
         response, ok = check_success(self, "AT+PGSLOT=?")
         if ok:
             return response
 
-    def set_periodicity(self, value: int):
+    def set_periodicity(self, value: int) -> str | None:
+        """AT+PGSLOT=<value> — set the Class B ping slot periodicity.
+
+        The ping interval in seconds is 2^value:
+            0=1 s, 1=2 s, 2=4 s, 3=8 s, 4=16 s, 5=32 s, 6=64 s, 7=128 s.
+        Valid range: 0-7.
+        """
         if not 0 <= value <= 7:
             logging.warning("Value must be between 0 and 7")
             return None
@@ -885,53 +1129,77 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_beacon_freq(self):
+    def get_beacon_freq(self) -> str | None:
+        """AT+BFREQ=? — return the Class B beacon broadcast frequency in Hz (read-only)."""
         response, ok = check_success(self, "AT+BFREQ=?")
         if ok:
             return response
 
-    def get_beacon_time(self):
+    def get_beacon_time(self) -> str | None:
+        """AT+BTIME=? — return the Class B beacon timestamp (read-only).
+
+        The timestamp reflects the time of the last successfully received
+        beacon and is expressed in GPS epoch seconds.
+        """
         response, ok = check_success(self, "AT+BTIME=?")
         if ok:
             return response
 
-    def get_gw_info(self):
+    def get_gw_info(self) -> str | None:
+        """AT+BGW=? — return the Class B gateway information from the last beacon (read-only).
+
+        The response contains the network identifier and gateway coordinates
+        as broadcast in the beacon frame.
+        """
         response, ok = check_success(self, "AT+BGW=?")
         if ok:
             return response
 
     # LORAWAN INFORMATION
 
-    def get_rssi(self):
+    def get_rssi(self) -> str | None:
+        """AT+RSSI=? — return the RSSI of the last received downlink in dBm."""
         response, ok = check_success(self, "AT+RSSI=?")
         if ok:
             return response
 
-    def get_all_channel_rssi(self):
+    def get_all_channel_rssi(self) -> str | None:
+        """AT+ARSSI=? — return the RSSI measured on all available channels.
+
+        Returns a comma-separated list of <frequency>:<RSSI> pairs for each
+        channel in the current channel plan.
+        """
         response, ok = check_success(self, "AT+ARSSI=?")
         if ok:
             return response
 
-    def get_signal_to_noise_ratio(self):
+    def get_signal_to_noise_ratio(self) -> str | None:
+        """AT+SNR=? — return the SNR of the last received downlink in dB."""
         response, ok = check_success(self, "AT+SNR=?")
         if ok:
             return response
 
     # LORAWAN REGIONAL COMMANDS
-    # These commands are region-specific and govern frequency bands and
-    # regulatory compliance. Input validation is minimal; it is the
-    # caller's responsibility to pass values that are legal for the
-    # target region and deployment.
+    # These commands are region-specific and govern channel plans and
+    # regulatory compliance.  The caller is responsible for passing values
+    # that are legal for the target region and deployment.
 
-    def get_mask(self):
+    def get_mask(self) -> str | None:
+        """AT+MASK=? — return the current 16-bit channel mask as a 4-character hex string.
+
+        Only applicable to US915, AU915, CN470, and LA915 regions.
+        """
         response, ok = check_success(self, "AT+MASK=?")
         if ok:
             return response
 
-    def set_mask(self, mask: str):
-        # Must be exactly 4 hexadecimal characters, representing a
-        # 16-bit channel bitmask.
-        # Only applicable to US915, AU915, CN470, and LA915 regions.
+    def set_mask(self, mask: str) -> str | None:
+        """AT+MASK=<mask> — set the 16-bit channel activity mask.
+
+        *mask* must be exactly 4 hexadecimal characters (e.g. "0001"), where
+        each bit enables or disables the corresponding 8-channel sub-band.
+        Only applicable to US915, AU915, CN470, and LA915 regions.
+        """
         if all(char in string.hexdigits for char in mask) and len(mask) == 4:
             response, ok = check_success(self, f"AT+MASK={mask}")
             if ok:
@@ -940,7 +1208,12 @@ class RUI3Node(serial.Serial):
             logging.warning("This must be a 4 digit hexadecimal characters mask")
             return None
 
-    def get_eight_channel_mode(self):
+    def get_eight_channel_mode(self) -> str | None:
+        """AT+CHE=? — return the current eight-channel sub-band selection.
+
+        Only applicable to US915, AU915, CN470, and LA915 regions.
+        Returns four colon-separated sub-band indices.
+        """
         response, ok = check_success(self, "AT+CHE=?")
         if ok:
             return response
@@ -951,32 +1224,50 @@ class RUI3Node(serial.Serial):
         value2: int = 0,
         value3: int = 0,
         value4: int = 0,
-    ):
-        # Only applicable to US915, AU915, CN470, and LA915 regions.
-        # Each parameter selects an 8-channel sub-band; valid range is
-        # 0-9 (0-12 for CN470).
+    ) -> str | None:
+        """AT+CHE=<v1>:<v2>:<v3>:<v4> — select up to four 8-channel sub-bands.
+
+        Each parameter selects an 8-channel sub-band.  A value of 0 disables
+        the slot.  Valid sub-band range: 1-9 (1-12 for CN470).
+        Only applicable to US915, AU915, CN470, and LA915 regions.
+        """
         response, ok = check_success(
             self, f"AT+CHE={value1}:{value2}:{value3}:{value4}"
         )
         if ok:
             return response
 
-    def get_single_channel_mode_freq(self):
+    def get_single_channel_mode_freq(self) -> str | None:
+        """AT+CHS=? — return the single-channel mode frequency in Hz (0 = disabled)."""
         response, ok = check_success(self, "AT+CHS=?")
         if ok:
             return response
 
-    def set_single_channel_mode_freq(self, freq: int):
+    def set_single_channel_mode_freq(self, freq: int) -> str | None:
+        """AT+CHS=<freq> — set the single-channel mode frequency in Hz.
+
+        When non-zero, restricts all uplinks to this frequency.  Set to 0 to
+        disable single-channel mode and restore the full channel plan.
+        """
         response, ok = check_success(self, f"AT+CHS={freq}")
         if ok:
             return response
 
-    def get_freq_band(self):
+    def get_freq_band(self) -> str | None:
+        """AT+BAND=? — return the current LoRaWAN frequency band index (0-12)."""
         response, ok = check_success(self, "AT+BAND=?")
         if ok:
             return response
 
-    def set_freq_band(self, band: int):
+    def set_freq_band(self, band: int) -> str | None:
+        """AT+BAND=<band> — set the LoRaWAN frequency band.
+
+        Band index mapping:
+            0=EU433, 1=CN470, 2=RU864, 3=IN865, 4=EU868, 5=US915,
+            6=AU915, 7=KR920, 8=AS923-1, 9=AS923-2, 10=AS923-3,
+            11=AS923-4, 12=LA915.
+        Valid range: 0-12.
+        """
         if not 0 <= band <= 12:
             logging.warning("Value must be between 0 and 12")
             return None
@@ -995,10 +1286,23 @@ class RUI3Node(serial.Serial):
         freq: int,
         datarate: int,
         periodicity: int,
-    ):
-        # Class B and Class C use the same command parameters.
-        # The periodicity parameter is required even for Class C,
-        # where it has no functional effect.
+    ) -> str | None:
+        """AT+ADDMULC — add a multicast group.
+
+        Configures the device to receive downlinks addressed to a multicast
+        group.  Class B and Class C groups use the same parameter set; the
+        *periodicity* parameter is required even for Class C (where it has no
+        effect on receive scheduling).
+
+        Args:
+            lorawan_class: "B" or "C".
+            dev_addr:      4-byte multicast device address as 8 hex characters.
+            nwk_s_key:     16-byte multicast network session key as 32 hex characters.
+            app_s_key:     16-byte multicast application session key as 32 hex characters.
+            freq:          Multicast downlink frequency in Hz.
+            datarate:      Multicast data rate index (0-7).
+            periodicity:   Class B ping slot periodicity index (0-7); ignored for Class C.
+        """
         if lorawan_class.upper() not in ("B", "C"):
             logging.warning("Multicast class must be either B or C")
             return None
@@ -1031,7 +1335,12 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def remove_multicast_group(self, dev_addr: str):
+    def remove_multicast_group(self, dev_addr: str) -> str | None:
+        """AT+RMVMULC=<dev_addr> — remove a previously configured multicast group.
+
+        *dev_addr* must be exactly 8 hexadecimal characters (4 bytes, MSB first)
+        and must match the address used when the group was added.
+        """
         if all(char in string.hexdigits for char in dev_addr) and len(dev_addr) == 8:
             response, ok = check_success(self, f"AT+RMVMULC={dev_addr}")
             if ok:
@@ -1040,22 +1349,29 @@ class RUI3Node(serial.Serial):
             logging.warning("Device address must be exactly 8 hexadecimal characters")
             return None
 
-    def get_multicast_group(self):
+    def get_multicast_group(self) -> str | None:
+        """AT+LSTMULC=? — return a list of all configured multicast groups."""
         response, ok = check_success(self, "AT+LSTMULC=?")
         if ok:
             return response
 
     # P2P INSTRUCTIONS
+    # The following commands configure and operate the module in LoRa P2P or
+    # FSK P2P mode.  Switch between modes with set_lora_network_mode().
 
-    def get_lora_network_mode(self):
+    def get_lora_network_mode(self) -> str | None:
+        """AT+NWM=? — return the current network working mode (0, 1, or 2)."""
         response, ok = check_success(self, "AT+NWM=?")
         if ok:
             return response
 
-    def set_lora_network_mode(self, mode: int):
-        # 0 - P2P_LORA
-        # 1 - LoRaWAN
-        # 2 - P2P_FSK
+    def set_lora_network_mode(self, mode: int) -> str | None:
+        """AT+NWM=<mode> — set the network working mode.
+
+        mode 0 — P2P LoRa (point-to-point LoRa modulation).
+        mode 1 — LoRaWAN (managed network protocol).
+        mode 2 — P2P FSK (point-to-point FSK modulation).
+        """
         if mode not in (0, 1, 2):
             logging.warning("Mode must be either 0, 1 or 2")
             return None
@@ -1063,22 +1379,34 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_freq(self):
+    def get_p2p_freq(self) -> str | None:
+        """AT+PFREQ=? — return the P2P radio frequency in Hz."""
         response, ok = check_success(self, "AT+PFREQ=?")
         if ok:
             return response
 
-    def set_p2p_freq(self, freq: int):
+    def set_p2p_freq(self, freq: int) -> str | None:
+        """AT+PFREQ=<freq> — set the P2P radio frequency in Hz.
+
+        Valid range: 150000000-960000000 Hz.  The firmware does not enforce
+        this range; the caller is responsible for passing a legal value.
+        """
         response, ok = check_success(self, f"AT+PFREQ={freq}")
         if ok:
             return response
 
-    def get_spread_factor(self):
+    def get_spread_factor(self) -> str | None:
+        """AT+PSF=? — return the P2P LoRa spreading factor (5-12)."""
         response, ok = check_success(self, "AT+PSF=?")
         if ok:
             return response
 
-    def set_spread_factor(self, spread: int = 7):
+    def set_spread_factor(self, spread: int = 7) -> str | None:
+        """AT+PSF=<sf> — set the P2P LoRa spreading factor.
+
+        Valid range: 5-12.  SF5 and SF6 use implicit header mode.  Higher
+        spreading factors increase range at the cost of airtime.
+        """
         if spread not in (5, 6, 7, 8, 9, 10, 11, 12):
             logging.warning("Value must be between 5 and 12")
             return None
@@ -1086,12 +1414,20 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_band(self):
+    def get_p2p_band(self) -> str | None:
+        """AT+PBW=? — return the P2P LoRa bandwidth index (0-9)."""
         response, ok = check_success(self, "AT+PBW=?")
         if ok:
             return response
 
-    def set_p2p_band(self, band: int = 0):
+    def set_p2p_band(self, band: int = 0) -> str | None:
+        """AT+PBW=<band> — set the P2P LoRa bandwidth.
+
+        Index encoding:
+            0=125 kHz, 1=250 kHz, 2=500 kHz, 3=7.8 kHz, 4=10.4 kHz,
+            5=15.63 kHz, 6=20.83 kHz, 7=31.25 kHz, 8=41.67 kHz, 9=62.5 kHz.
+        Valid range: 0-9.
+        """
         if not 0 <= band <= 9:
             logging.warning("Value must be between 0 and 9")
             return None
@@ -1099,12 +1435,19 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_code_rate(self):
+    def get_p2p_code_rate(self) -> str | None:
+        """AT+PCR=? — return the P2P LoRa coding rate index (0-3)."""
         response, ok = check_success(self, "AT+PCR=?")
         if ok:
             return response
 
-    def set_p2p_code_rate(self, code_rate: int):
+    def set_p2p_code_rate(self, code_rate: int) -> str | None:
+        """AT+PCR=<cr> — set the P2P LoRa coding rate.
+
+        Index encoding: 0=4/5, 1=4/6, 2=4/7, 3=4/8.
+        Higher coding rates improve error correction at the cost of airtime.
+        Valid range: 0-3.
+        """
         if code_rate not in (0, 1, 2, 3):
             logging.warning("Code rate must be between 0 and 3")
             return None
@@ -1112,12 +1455,18 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_preamble_length(self):
+    def get_p2p_preamble_length(self) -> str | None:
+        """AT+PPL=? — return the P2P LoRa preamble length in symbols (5-65535)."""
         response, ok = check_success(self, "AT+PPL=?")
         if ok:
             return response
 
-    def set_p2p_preamble_length(self, length: int):
+    def set_p2p_preamble_length(self, length: int) -> str | None:
+        """AT+PPL=<length> — set the P2P LoRa preamble length in symbols.
+
+        Valid range: 5-65535.  Both transmitter and receiver must use the
+        same preamble length.
+        """
         if not 5 <= length <= 65535:
             logging.warning("Preamble length must be between 5 and 65535")
             return None
@@ -1125,12 +1474,17 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_tx_power(self):
+    def get_p2p_tx_power(self) -> str | None:
+        """AT+PTP=? — return the P2P TX output power in dBm (5-22)."""
         response, ok = check_success(self, "AT+PTP=?")
         if ok:
             return response
 
-    def set_p2p_tx_power(self, tx_power: int):
+    def set_p2p_tx_power(self, tx_power: int) -> str | None:
+        """AT+PTP=<power> — set the P2P TX output power in dBm.
+
+        Valid range: 5-22 dBm.
+        """
         if not 5 <= tx_power <= 22:
             logging.warning("TX power must between 5 and 22")
             return None
@@ -1138,12 +1492,17 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_fsk_bitrate(self):
+    def get_p2p_fsk_bitrate(self) -> str | None:
+        """AT+PBR=? — return the P2P FSK bit rate in bits per second (600-300000)."""
         response, ok = check_success(self, "AT+PBR=?")
         if ok:
             return response
 
-    def set_p2p_fsk_bitrate(self, bitrate: int):
+    def set_p2p_fsk_bitrate(self, bitrate: int) -> str | None:
+        """AT+PBR=<bitrate> — set the P2P FSK bit rate in bits per second.
+
+        Valid range: 600-300000 bps.  Only applicable in FSK mode (AT+NWM=2).
+        """
         if not 600 <= bitrate <= 300000:
             logging.warning("Bitrate must be between 600 and 300000")
             return None
@@ -1151,12 +1510,17 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_freq_deviation(self):
+    def get_p2p_freq_deviation(self) -> str | None:
+        """AT+PFDEV=? — return the P2P FSK frequency deviation in Hz (600-200000)."""
         response, ok = check_success(self, "AT+PFDEV=?")
         if ok:
             return response
 
-    def set_p2p_freq_deviation(self, deviation: int):
+    def set_p2p_freq_deviation(self, deviation: int) -> str | None:
+        """AT+PFDEV=<deviation> — set the P2P FSK frequency deviation in Hz.
+
+        Valid range: 600-200000 Hz.  Only applicable in FSK mode (AT+NWM=2).
+        """
         if not 600 <= deviation <= 200000:
             logging.warning("Frequency deviation must be between 600 and 200000")
             return None
@@ -1164,7 +1528,12 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def p2p_send(self, payload: str):
+    def p2p_send(self, payload: str) -> str | None:
+        """AT+PSEND=<payload> — transmit a P2P payload.
+
+        *payload* must be an even number of hexadecimal characters between
+        2 and 500 (i.e. 1-250 bytes).
+        """
         if (
             all(char in string.hexdigits for char in payload)
             and 2 <= len(payload) <= 500
@@ -1177,12 +1546,18 @@ class RUI3Node(serial.Serial):
             "Payload must be an even number of hexadecimal characters between 2 and 500"
         )
 
-    def get_p2p_channel_activity(self):
+    def get_p2p_channel_activity(self) -> str | None:
+        """AT+CAD=? — return the channel activity detection state (0 = disabled, 1 = enabled)."""
         response, ok = check_success(self, "AT+CAD=?")
         if ok:
             return response
 
-    def set_p2p_channel_activity(self, on: bool):
+    def set_p2p_channel_activity(self, on: bool) -> str | None:
+        """AT+CAD=<mode> — enable (True) or disable (False) LoRa channel activity detection.
+
+        When enabled, the radio listens for LoRa preamble activity before
+        deciding whether the channel is occupied.
+        """
         mode = 1 if on else 0
         response, ok = check_success(self, f"AT+CAD={mode}")
         if ok:
@@ -1204,65 +1579,93 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_encryption(self):
+    def get_p2p_encryption(self) -> str | None:
+        """AT+ENCRY=? — return the P2P payload encryption state (0 = disabled, 1 = enabled)."""
         response, ok = check_success(self, "AT+ENCRY=?")
         if ok:
             return response
 
-    def set_p2p_encryption(self, on: bool):
+    def set_p2p_encryption(self, on: bool) -> str | None:
+        """AT+ENCRY=<mode> — enable (True) or disable (False) P2P payload encryption.
+
+        When enabled, the payload is encrypted using AES-128 with the key
+        configured via set_p2p_encryption_key().
+        """
         mode = 1 if on else 0
         response, ok = check_success(self, f"AT+ENCRY={mode}")
         if ok:
             return response
 
-    def get_p2p_encryption_key(self):
+    def get_p2p_encryption_key(self) -> str | None:
+        """AT+ENCKEY=? — return the 16-byte P2P AES-128 encryption key as 32 hex characters."""
         response, ok = check_success(self, "AT+ENCKEY=?")
         if ok:
             return response
 
-    def set_p2p_encryption_key(self, key: str):
+    def set_p2p_encryption_key(self, key: str) -> str | None:
+        """AT+ENCKEY=<key> — set the 16-byte P2P AES-128 encryption key.
+
+        *key* must be exactly 32 hexadecimal characters (16 bytes).
+        """
         if all(char in string.hexdigits for char in key) and len(key) == 32:
             response, ok = check_success(self, f"AT+ENCKEY={key}")
             if ok:
                 return response
         logging.warning("Encryption key must be exactly 32 hexadecimal characters")
 
-    def get_p2p_crypt_status(self):
+    def get_p2p_crypt_status(self) -> str | None:
+        """AT+PCRYPT=? — return the P2P additional encryption layer state (0 = disabled, 1 = enabled)."""
         response, ok = check_success(self, "AT+PCRYPT=?")
         if ok:
             return response
 
-    def set_p2p_crypt_status(self, on: bool):
+    def set_p2p_crypt_status(self, on: bool) -> str | None:
+        """AT+PCRYPT=<mode> — enable (True) or disable (False) the P2P additional encryption layer.
+
+        This encryption layer uses the key configured via
+        set_p2p_crypt_decrypt_key() and the IV from set_p2p_crypt_iv().
+        """
         mode = 1 if on else 0
         response, ok = check_success(self, f"AT+PCRYPT={mode}")
         if ok:
             return response
 
-    def get_p2p_crypt_decrypt_key(self):
+    def get_p2p_crypt_decrypt_key(self) -> str | None:
+        """AT+PKEY=? — return the 8-byte P2P crypt/decrypt key as 16 hex characters."""
         response, ok = check_success(self, "AT+PKEY=?")
         if ok:
             return response
 
-    def set_p2p_crypt_decrypt_key(self, key: str):
+    def set_p2p_crypt_decrypt_key(self, key: str) -> str | None:
+        """AT+PKEY=<key> — set the 8-byte P2P crypt/decrypt key.
+
+        *key* must be exactly 16 hexadecimal characters (8 bytes).
+        """
         if all(char in string.hexdigits for char in key) and len(key) == 16:
             response, ok = check_success(self, f"AT+PKEY={key}")
             if ok:
                 return response
         logging.warning("Key must be exactly 16 hexadecimal characters")
 
-    def get_p2p_crypt_iv(self):
+    def get_p2p_crypt_iv(self) -> str | None:
+        """AT+CRYPIV=? — return the 16-byte P2P encryption initialisation vector as 32 hex characters."""
         response, ok = check_success(self, "AT+CRYPIV=?")
         if ok:
             return response
 
-    def set_p2p_crypt_iv(self, key: str):
+    def set_p2p_crypt_iv(self, key: str) -> str | None:
+        """AT+CRYPIV=<iv> — set the 16-byte P2P encryption initialisation vector.
+
+        *iv* must be exactly 32 hexadecimal characters (16 bytes).
+        """
         if all(char in string.hexdigits for char in key) and len(key) == 32:
             response, ok = check_success(self, f"AT+CRYPIV={key}")
             if ok:
                 return response
         logging.warning("CryptIV key must be exactly 32 hexadecimal characters")
 
-    def get_p2p_params(self):
+    def get_p2p_params(self) -> str | None:
+        """AT+P2P=? — return all P2P parameters in the format <freq>:<sf>:<bw>:<cr>:<preamble>:<power>."""
         response, ok = check_success(self, "AT+P2P=?")
         if ok:
             return response
@@ -1275,7 +1678,17 @@ class RUI3Node(serial.Serial):
         code_rate: int = 0,
         preamble_len: int = 8,
         tx_power: int = 14,
-    ):
+    ) -> str | None:
+        """AT+P2P=<freq>:<sf>:<bw>:<cr>:<preamble>:<power> — set all P2P parameters at once.
+
+        Args:
+            freq:         Radio frequency in Hz (150000000-960000000).
+            sf:           Spreading factor (6-12).
+            bandwidth:    Bandwidth index (0-9; see set_p2p_band() for encoding).
+            code_rate:    Coding rate (0=4/5, 1=4/6, 2=4/7, 3=4/8).
+            preamble_len: Preamble length in symbols (2-65535).
+            tx_power:     TX output power in dBm (5-22).
+        """
         if not 150000000 <= freq <= 960000000:
             logging.warning("Frequency must be between 150 MHz and 960 MHz")
             return None
@@ -1302,23 +1715,36 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_iq_inv(self):
+    def get_p2p_iq_inv(self) -> str | None:
+        """AT+IQINVER=? — return the P2P IQ inversion state (0 = normal, 1 = inverted)."""
         response, ok = check_success(self, "AT+IQINVER=?")
         if ok:
             return response
 
-    def set_p2p_iq_inv(self, on: bool):
+    def set_p2p_iq_inv(self, on: bool) -> str | None:
+        """AT+IQINVER=<mode> — enable (True) or disable (False) P2P IQ signal inversion.
+
+        IQ inversion is used to distinguish uplink and downlink signals in
+        some P2P deployments, or to prevent interference between networks
+        using the same frequency.
+        """
         mode = 1 if on else 0
         response, ok = check_success(self, f"AT+IQINVER={mode}")
         if ok:
             return response
 
-    def get_p2p_syncword(self):
+    def get_p2p_syncword(self) -> str | None:
+        """AT+SYNCWORD=? — return the P2P LoRa sync word as a 4-character hex string."""
         response, ok = check_success(self, "AT+SYNCWORD=?")
         if ok:
             return response
 
-    def set_p2p_syncword(self, word: str):
+    def set_p2p_syncword(self, word: str) -> str | None:
+        """AT+SYNCWORD=<word> — set the P2P LoRa sync word.
+
+        *word* must be exactly 4 hexadecimal characters (2 bytes), e.g. "1424".
+        All devices in the same P2P network must use the same sync word.
+        """
         if all(char in string.hexdigits for char in word) and len(word) == 4:
             response, ok = check_success(self, f"AT+SYNCWORD={word}")
             if ok:
@@ -1327,22 +1753,38 @@ class RUI3Node(serial.Serial):
             logging.warning("Syncword must be exactly 4 hexadecimal characters")
             return None
 
-    def get_p2p_rf_freq(self):
+    # P2P LEGACY COMMANDS
+    # The commands below (AT+RFFREQUENCY through AT+FIXLENGTHPAYLOAD) are the
+    # older individual-parameter counterparts to the modern AT+P2P command.
+    # They are provided for backward compatibility.  Prefer the AT+P2P
+    # equivalent (set_p2p_params / get_p2p_params) for new code.
+
+    def get_p2p_rf_freq(self) -> str | None:
+        """AT+RFFREQUENCY=? — return the P2P radio frequency in Hz (legacy command)."""
         response, ok = check_success(self, "AT+RFFREQUENCY=?")
         if ok:
             return response
 
-    def set_p2p_rf_freq(self, freq: int):
+    def set_p2p_rf_freq(self, freq: int) -> str | None:
+        """AT+RFFREQUENCY=<freq> — set the P2P radio frequency in Hz (legacy command).
+
+        Valid range: 150000000-960000000 Hz.
+        """
         response, ok = check_success(self, f"AT+RFFREQUENCY={freq}")
         if ok:
             return response
 
-    def get_p2p_tx_out_power(self):
+    def get_p2p_tx_out_power(self) -> str | None:
+        """AT+TXOUTPUTPOWER=? — return the P2P TX output power in dBm (legacy command)."""
         response, ok = check_success(self, "AT+TXOUTPUTPOWER=?")
         if ok:
             return response
 
-    def set_p2p_tx_out_power(self, tx_out: int):
+    def set_p2p_tx_out_power(self, tx_out: int) -> str | None:
+        """AT+TXOUTPUTPOWER=<power> — set the P2P TX output power in dBm (legacy command).
+
+        Valid range: 5-22 dBm.
+        """
         if not 5 <= tx_out <= 22:
             logging.warning("TX out power must be between 5 and 22")
             return None
@@ -1350,7 +1792,8 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_bandwidth(self):
+    def get_p2p_bandwidth(self) -> str | None:
+        """AT+BANDWIDTH=? — return the P2P LoRa bandwidth index (legacy command)."""
         response, ok = check_success(self, "AT+BANDWIDTH=?")
         if ok:
             return response
@@ -1358,7 +1801,7 @@ class RUI3Node(serial.Serial):
     def set_p2p_bandwidth(self, band: int) -> str | None:
         """AT+BANDWIDTH=<band> — set the P2P LoRa bandwidth (legacy command).
 
-        *band* encoding (same as AT+PBW):
+        Index encoding (same as AT+PBW):
             0=125 kHz, 1=250 kHz, 2=500 kHz, 3=7.8 kHz, 4=10.4 kHz,
             5=15.63 kHz, 6=20.83 kHz, 7=31.25 kHz, 8=41.67 kHz, 9=62.5 kHz.
         Valid range: 0-9.
@@ -1370,16 +1813,17 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_spread_factor(self):
+    def get_p2p_spread_factor(self) -> str | None:
+        """AT+SPREADINGFACTOR=? — return the P2P LoRa spreading factor (legacy command)."""
         response, ok = check_success(self, "AT+SPREADINGFACTOR=?")
         if ok:
             return response
 
     def set_p2p_spread_factor(self, sf: int) -> str | None:
-        """AT+SPREADINGFACTOR=<sf> — set the P2P spreading factor (legacy command).
+        """AT+SPREADINGFACTOR=<sf> — set the P2P LoRa spreading factor (legacy command).
 
         Valid range: 6-12.  Note: SF5 is only valid for the AT+PSF individual
-        command; the legacy AT+SPREADINGFACTOR command does not accept SF5.
+        command; this legacy command does not accept SF5.
         """
         if not 6 <= sf <= 12:
             logging.warning("Spreading Factor must be between 6 and 12")
@@ -1388,12 +1832,18 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_coding_rate(self):
+    def get_p2p_coding_rate(self) -> str | None:
+        """AT+CODINGRATE=? — return the P2P LoRa coding rate index (legacy command)."""
         response, ok = check_success(self, "AT+CODINGRATE=?")
         if ok:
             return response
 
-    def set_p2p_coding_rate(self, code_rate: int):
+    def set_p2p_coding_rate(self, code_rate: int) -> str | None:
+        """AT+CODINGRATE=<cr> — set the P2P LoRa coding rate (legacy command).
+
+        Index encoding: 0=4/5, 1=4/6, 2=4/7, 3=4/8.
+        Valid range: 0-3.
+        """
         if code_rate not in (0, 1, 2, 3):
             logging.warning("Coding rate must be either 0, 1, 2 or 3")
             return None
@@ -1401,13 +1851,14 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_preamble_length_2(self):
+    def get_p2p_preamble_length_2(self) -> str | None:
+        """AT+PREAMBLELENGTH=? — return the P2P preamble length in symbols (legacy command)."""
         response, ok = check_success(self, "AT+PREAMBLELENGTH=?")
         if ok:
             return response
 
     def set_p2p_preamble_length_2(self, preamble_len: int) -> str | None:
-        """AT+PREAMBLELENGTH=<len> — set the P2P preamble length (legacy command).
+        """AT+PREAMBLELENGTH=<len> — set the P2P preamble length in symbols (legacy command).
 
         Valid range: 5-65535 symbols.
         """
@@ -1418,12 +1869,22 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_symbol_timeout(self):
+    def get_p2p_symbol_timeout(self) -> str | None:
+        """AT+SYMBOLTIMEOUT=? — return the P2P RX symbol timeout (legacy command).
+
+        The value is expressed in symbol periods (0-248).  A value of 0
+        disables the timeout (continuous receive until manually stopped).
+        """
         response, ok = check_success(self, "AT+SYMBOLTIMEOUT=?")
         if ok:
             return response
 
-    def set_p2p_symbol_timeout(self, timeout: int):
+    def set_p2p_symbol_timeout(self, timeout: int) -> str | None:
+        """AT+SYMBOLTIMEOUT=<timeout> — set the P2P RX symbol timeout (legacy command).
+
+        *timeout* is in symbol periods; valid range is 0-248.  Set to 0 to
+        disable the timeout.
+        """
         if not 0 <= timeout <= 248:
             logging.warning("Symbol timeout must be between 0 and 248")
             return None
@@ -1432,19 +1893,30 @@ class RUI3Node(serial.Serial):
             return response
 
     def get_p2p_fixed_length_payload(self) -> str | None:
-        """AT+FIXLENGTHPAYLOAD=? — get the fixed-length payload mode (legacy command)."""
+        """AT+FIXLENGTHPAYLOAD=? — return the fixed-length payload mode (legacy command).
+
+        Returns 0 (variable-length payload) or 1 (fixed-length payload).
+        """
         response, ok = check_success(self, "AT+FIXLENGTHPAYLOAD=?")
         if ok:
             return response
 
     def set_p2p_fixed_length_payload(self, on: bool) -> str | None:
-        """AT+FIXLENGTHPAYLOAD=<mode> — enable (1) or disable (0) fixed-length payload mode (legacy command)."""
+        """AT+FIXLENGTHPAYLOAD=<mode> — enable (True) or disable (False) fixed-length payload mode (legacy command).
+
+        When enabled, the receiver does not include a payload length field in
+        the LoRa header (implicit header mode).  Both sides must be configured
+        identically.
+        """
         mode = 1 if on else 0
         response, ok = check_success(self, f"AT+FIXLENGTHPAYLOAD={mode}")
         if ok:
             return response
 
     # RF TEST
+    # The following commands place the radio in test mode for hardware
+    # verification and regulatory certification.  Always call rf_test_stop()
+    # before returning the module to normal LoRaWAN or P2P operation.
 
     def rf_rssi_test(self) -> str | None:
         """AT+TRSSI=? — execute an RSSI test and return the measured value."""
