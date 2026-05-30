@@ -232,7 +232,7 @@ class RUI3Node(serial.Serial):
 
     def set_device_alias(self, alias: str):
         # Must be between 1 and 16 characters.
-        if len(alias) < 1 or len(alias) > 16:
+        if not 1 <= len(alias) <= 16:
             logging.warning("Alias must be between 1 and 16 characters")
             return None
         response, ok = check_success(self, f"AT+ALIAS={alias}")
@@ -327,7 +327,7 @@ class RUI3Node(serial.Serial):
         The password must be 1-8 printable ASCII characters (any printable
         character is accepted by the firmware).
         """
-        if len(password) < 1 or len(password) > 8:
+        if not 1 <= len(password) <= 8:
             logging.warning("Password must be between 1 and 8 characters")
             return None
         if not password.isprintable():
@@ -551,10 +551,10 @@ class RUI3Node(serial.Serial):
         # join_attempts: number of join attempts (0-255); 0 = unlimited.
         join_bin = 1 if join else 0
         auto_join_bin = 1 if auto_join else 0
-        if interval < 7 or interval > 255:
+        if not 7 <= interval <= 255:
             logging.warning("Reattempt value must be within 7 and 255")
             return None
-        if join_attempts < 0 or join_attempts > 255:
+        if not 0 <= join_attempts <= 255:
             logging.warning("No. of join attempts must be between 0 and 255")
             return None
         response, ok = check_success(
@@ -596,13 +596,13 @@ class RUI3Node(serial.Serial):
         # Port number must be within 1 and 233.
         # Payload must be within 2 and 500 digit length (even number),
         # representing 1 to 256 hex bytes.
-        if port < 1 or port > 233:
+        if not 1 <= port <= 233:
             logging.warning("Port must be between 1 and 233")
             return None
         if not all(char in string.hexdigits for char in payload):
             logging.warning("Payload must only contain hexadecimal characters")
             return None
-        if len(payload) < 2 or len(payload) > 500 or len(payload) % 2 != 0:
+        if not 2 <= len(payload) <= 500 or len(payload) % 2 != 0:
             logging.warning("Payload length must be an even number between 2 and 500")
             return None
         response, ok = check_success(self, f"AT+SEND={port}:{payload}")
@@ -616,13 +616,13 @@ class RUI3Node(serial.Serial):
         # Only supported for uplink packets and requires a WisGate Edge
         # gateway.
         ack_bool = 1 if ack else 0
-        if port < 1 or port > 233:
+        if not 1 <= port <= 233:
             logging.warning("Port must be between 1 and 233")
             return None
         if not all(char in string.hexdigits for char in payload):
             logging.warning("Payload must only contain hexadecimal characters")
             return None
-        if len(payload) < 2 or len(payload) > 2000 or len(payload) % 2 != 0:
+        if not 2 <= len(payload) <= 2000 or len(payload) % 2 != 0:
             logging.warning("Payload length must be an even number between 2 and 2000")
             return None
         response, ok = check_success(self, f"AT+LPSEND={port}:{ack_bool}:{payload}")
@@ -635,7 +635,7 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_confirm_packet_retransmission(self, tries: int):
-        if tries < 0 or tries > 7:
+        if not 0 <= tries <= 7:
             logging.warning("Invalid number: must be within 0 and 7")
             return None
         response, ok = check_success(self, f"AT+RETY={tries}")
@@ -689,7 +689,7 @@ class RUI3Node(serial.Serial):
     def set_data_rate(self, data_rate: int):
         # Valid range varies by region; 0-7 is the widest possible
         # range across all supported bands.
-        if data_rate < 0 or data_rate > 7:
+        if not 0 <= data_rate <= 7:
             logging.warning("Data rate must be between 0 and 7")
             return None
         response, ok = check_success(self, f"AT+DR={data_rate}")
@@ -702,7 +702,7 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_join_delay_rx_window_1(self, value: int):
-        if value < 1 or value > 14:
+        if not 1 <= value <= 14:
             logging.warning("Value must be within 1 and 14")
             return None
         response, ok = check_success(self, f"AT+JN1DL={value}")
@@ -717,7 +717,7 @@ class RUI3Node(serial.Serial):
     def set_join_delay_rx_window_2(self, value: int):
         # Must be greater than the value set by
         # set_join_delay_rx_window_1(); range is 2-15 seconds.
-        if value < 2 or value > 15:
+        if not 2 <= value <= 15:
             logging.warning("Value must be within 2 and 15")
             return None
         response, ok = check_success(self, f"AT+JN2DL={value}")
@@ -741,7 +741,7 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_receive_window_1_delay(self, value: int):
-        if value < 1 or value > 15:
+        if not 1 <= value <= 15:
             logging.warning("Value must be between 1 and 15")
             return None
         response, ok = check_success(self, f"AT+RX1DL={value}")
@@ -754,7 +754,7 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_receive_window_2_delay(self, value: int):
-        if value < 2 or value > 15:
+        if not 2 <= value <= 15:
             logging.warning("Value must be between 2 and 15")
             return None
         response, ok = check_success(self, f"AT+RX2DL={value}")
@@ -769,7 +769,7 @@ class RUI3Node(serial.Serial):
     def set_receive_window_2_data_rate(self, value: int):
         # Valid range varies by region: 0-5 for EU/AS/KR/CN,
         # 8-13 for US915/AU915/LA915.
-        if value < 0 or value > 13:
+        if not 0 <= value <= 13:
             logging.warning("Value must be between 0 and 13")
             return None
         response, ok = check_success(self, f"AT+RX2DR={value}")
@@ -795,7 +795,7 @@ class RUI3Node(serial.Serial):
         # Valid range depends on region (0 = highest power):
         #   EU433: 0-5 | EU868/CN470/KR920/AS923/RU864: 0-7
         #   IN865: 0-10 | US915/AU915: 0-14
-        if value < 0 or value > 14:
+        if not 0 <= value <= 14:
             logging.warning("Value must be between 0 and 14")
             return None
         response, ok = check_success(self, f"AT+TXP={value}")
@@ -878,7 +878,7 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_periodicity(self, value: int):
-        if value < 0 or value > 7:
+        if not 0 <= value <= 7:
             logging.warning("Value must be between 0 and 7")
             return None
         response, ok = check_success(self, f"AT+PGSLOT={value}")
@@ -977,7 +977,7 @@ class RUI3Node(serial.Serial):
             return response
 
     def set_freq_band(self, band: int):
-        if band < 0 or band > 12:
+        if not 0 <= band <= 12:
             logging.warning("Value must be between 0 and 12")
             return None
         response, ok = check_success(self, f"AT+BAND={band}")
@@ -1017,10 +1017,10 @@ class RUI3Node(serial.Serial):
         ):
             logging.warning("App key must be exactly 32 hexadecimal characters")
             return None
-        if datarate < 0 or datarate > 7:
+        if not 0 <= datarate <= 7:
             logging.warning("Datarate must be between 0 and 7")
             return None
-        if periodicity < 0 or periodicity > 7:
+        if not 0 <= periodicity <= 7:
             logging.warning("Periodicity must be between 0 and 7")
             return None
         response, ok = check_success(
