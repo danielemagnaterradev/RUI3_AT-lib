@@ -1,3 +1,23 @@
+"""
+rui3pylib — Python wrapper for the RUI3 AT command set.
+
+Wraps every AT command defined in the official RAKwireless RUI3 AT Command
+Manual (https://docs.rakwireless.com/…/rui3/at-command-manual/) as a method
+of the RUI3Node class, which extends serial.Serial.
+
+Dependencies:
+    pyserial >= 3.5
+
+Threading model:
+    All methods are **blocking**. Do not share a single RUI3Node instance
+    across threads without external locking.
+
+Hex key conventions:
+    All key/EUI/address parameters must be supplied as plain ASCII hex strings
+    (e.g. "1122334455667788"), MSB first, matching the RUI3 documentation.
+    No colons, spaces, or 0x prefixes unless otherwise stated.
+"""
+
 import logging
 import serial
 import string
@@ -8,71 +28,100 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
+# Maximum seconds to keep draining the receive buffer after the initial wait.
+_READ_DRAIN_TIMEOUT = 5.0
+
 
 def _status(ok: bool) -> str:
     return "OK" if ok else "FAILED"
 
 
-def send_command(port: serial.Serial, cmd: str, wait: float = 3.0):
+def send_command(port: serial.Serial, cmd: str, wait: float = 3.0) -> str:
+    """Send *cmd* over *port* and return the full response string.
+
+    After the initial *wait* seconds the function drains the input buffer until
+    no new bytes arrive for 0.1 s, or until _READ_DRAIN_TIMEOUT seconds have
+    elapsed in total (whichever comes first), preventing an infinite loop on
+    devices that emit continuous debug output.
+    """
     port.reset_input_buffer()
     full_cmd = cmd.strip() + "\r\n"
     port.write(full_cmd.encode(errors="replace"))
     time.sleep(wait)
 
     response = ""
-    while port.in_waiting:
+    deadline = time.monotonic() + _READ_DRAIN_TIMEOUT
+    while port.in_waiting and time.monotonic() < deadline:
         response += port.read(port.in_waiting).decode(errors="replace")
-        time.sleep(1.0)
+        time.sleep(0.1)
 
-    # Filter out firmware debug lines
+    # Filter out firmware debug lines (e.g. "[APP] …")
     response = "\n".join(
         line for line in response.splitlines() if not line.startswith("[APP]")
     )
     return response
 
 
-def check_success(port: serial.Serial, cmd: str, wait: float = 3.0):
+def check_success(port: serial.Serial, cmd: str, wait: float = 3.0) -> tuple[str, bool]:
+    """Send *cmd*, log the outcome, and return (response, ok).
+
+    *ok* is True when the response contains the final status line "OK".
+    Only the standalone "OK" status token is matched — it is identified as a
+    line that equals "OK" exactly, so payload data that happens to contain the
+    letters "OK" does not produce a false positive and is not stripped from the
+    logged output.
+    """
     response = send_command(port, cmd, wait)
-    ok = "OK" in response
-    clean = response.replace("OK", "").strip()
+    # Check for the status token as a standalone line, not as a substring,
+    # to avoid false positives on payload data that contains "OK".
+    lines = response.splitlines()
+    ok = any(line.strip() == "OK" for line in lines)
+    # Build a clean version for logging by removing only the bare "OK" status line.
+    clean_lines = [line for line in lines if line.strip() != "OK"]
+    clean = "\n".join(clean_lines).strip()
     logging.info(f"[{_status(ok)}] {cmd}" + (f" -> {clean}" if clean else ""))
     return response, ok
 
 
-# This class wraps all RUI3 AT commands as methods.
-# On initialization, if no port is specified, it scans all available
-# serial ports and connects to the first RUI3-compatible device found.
-
-
 class RUI3Node(serial.Serial):
+    """RUI3 AT command wrapper.
+
+    Extends serial.Serial so that the underlying port can be used directly
+    when needed.  All AT commands are exposed as methods.
+
+    Args:
+        port:     Serial device path (e.g. ``"/dev/ttyUSB0"`` or ``"COM3"``).
+                  If *None* (default) the constructor scans all available
+                  ports and connects to the first RUI3-compatible device.
+        baudrate: Serial baud rate.  Default is 115200 (RUI3 factory default).
+        timeout:  Read timeout in seconds passed to serial.Serial.
+    """
+
     def __init__(
         self,
         port: str | None = None,
         baudrate: int = 115200,
         timeout: float = 3.0,
-    ):
+    ) -> None:
         super().__init__()
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
         if port is None:
-            while True:
-                for interface in comports():
-                    try:
-                        self.port = interface.device
-                        self.open()
-                        if self.try_connect():
-                            logging.info(f"Connected to port {self.port}")
-                            break
-                        else:
-                            self.close()
-                            continue
-                    except serial.serialutil.SerialException as e:
-                        logging.info(f"SerialException on {self.port}: {e}")
-                        if self.is_open:
-                            self.close()
-                            break
-                break
+            # Scan available ports; stop as soon as one responds to "AT".
+            for interface in comports():
+                try:
+                    self.port = interface.device
+                    self.open()
+                    if self.try_connect():
+                        logging.info(f"Connected to port {self.port}")
+                        break
+                    else:
+                        self.close()
+                except serial.serialutil.SerialException as e:
+                    logging.info(f"SerialException on {self.port}: {e}")
+                    if self.is_open:
+                        self.close()
         else:
             try:
                 self.open()
@@ -85,7 +134,8 @@ class RUI3Node(serial.Serial):
                 if self.is_open:
                     self.close()
 
-    def try_connect(self):
+    def try_connect(self) -> bool:
+        """Send a bare AT and return True if the device responds with OK."""
         try:
             _, ok = check_success(self, "AT", 5.0)
             return ok
@@ -95,17 +145,24 @@ class RUI3Node(serial.Serial):
 
     # GENERAL COMMANDS
 
-    def ping(self):
+    def ping(self) -> str | None:
+        """AT — check that communication is working (returns OK)."""
         response, ok = check_success(self, "AT")
         if ok:
             return response
 
-    def help(self):
+    def at_help(self) -> str | None:
+        """AT? — print a short help listing for all supported commands."""
         response, ok = check_success(self, "AT?")
         if ok:
             return response
 
-    def toggle_command_echo(self):
+    def toggle_command_echo(self) -> str | None:
+        """ATE — toggle the AT command echo on the serial terminal.
+
+        Each call inverts the current echo state.  The state is not readable
+        via any AT command; the caller must track it externally if needed.
+        """
         response, ok = check_success(self, "ATE")
         if ok:
             return response
@@ -211,7 +268,16 @@ class RUI3Node(serial.Serial):
 
     # LOW POWER COMMANDS
 
-    def at_sleep(self, duration_ms: int):
+    def at_sleep(self, duration_ms: int) -> str | None:
+        """AT+SLEEP=<ms> — enter sleep mode for *duration_ms* milliseconds.
+
+        Valid range: 1 ~ (2^32 - 1).  Call with no argument equivalent
+        (AT+SLEEP with no parameter) is not exposed here because it triggers
+        indefinite sleep; use set_low_power_mode(True) for that instead.
+        """
+        if duration_ms < 1:
+            logging.warning("Sleep duration must be at least 1 ms")
+            return None
         response, ok = check_success(self, f"AT+SLEEP={duration_ms}")
         if ok:
             return response
@@ -255,9 +321,17 @@ class RUI3Node(serial.Serial):
         _ = send_command(self, "AT+LOCK")
         logging.info(f"Serial port {self.port} is now locked")
 
-    def set_password(self, password: str):
+    def set_password(self, password: str) -> str | None:
+        """AT+PWORD=<password> — set the serial port locking password.
+
+        The password must be 1-8 printable ASCII characters (any printable
+        character is accepted by the firmware).
+        """
         if len(password) < 1 or len(password) > 8:
             logging.warning("Password must be between 1 and 8 characters")
+            return None
+        if not password.isprintable():
+            logging.warning("Password must contain only printable characters")
             return None
         response, ok = check_success(self, f"AT+PWORD={password}")
         if ok:
@@ -284,18 +358,27 @@ class RUI3Node(serial.Serial):
     # All methods in this section except set_boot_mode() only work
     # while in boot mode.
 
-    def set_boot_mode(self):
-        # Enters bootloader mode for firmware upgrade.
-        # To leave boot mode, call at_run().
-        # AT_BUSY_ERROR is returned if the bootloader process is
-        # already running.
-        response, ok = check_success(self, "AT+BOOT")
-        if ok:
-            return response
+    def set_boot_mode(self) -> str:
+        """AT+BOOT — enter bootloader mode for firmware upgrade.
 
-    def get_bootloader_ver(self):
-        # Uses AT+VERSION (boot mode only), which is distinct from
-        # AT+VER=? used by get_firm_version() in normal mode.
+        The device responds with "<BOOT MODE>" rather than "OK", so
+        send_command is used directly.  To leave boot mode call at_run().
+        AT_BUSY_ERROR is returned by the firmware if the bootloader process
+        is already running.
+        """
+        response = send_command(self, "AT+BOOT")
+        logging.info(f"Boot mode response: {response.strip()}")
+        return response
+
+    def get_bootloader_ver(self) -> str:
+        """AT+VERSION — get the bootloader version string (boot mode only).
+
+        This command is only available while the device is in boot mode
+        (entered via set_boot_mode()).  The doc also accepts AT+VER=? in
+        boot mode as an equivalent alias, but AT+VERSION is the canonical
+        form and is used here.  Neither command returns an "OK" status token
+        in boot mode, so send_command is used directly.
+        """
         return send_command(self, "AT+VERSION")
 
     def get_bootloader_status(self):
@@ -1105,9 +1188,17 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def p2p_receive(self, timeout: int):
-        if not 1 <= timeout <= 65535:
-            logging.warning("Timeout must be between 1 and 65535 milliseconds")
+    def p2p_receive(self, timeout: int) -> str | None:
+        """AT+PRECV=<timeout> — start P2P receive mode.
+
+        *timeout* is in milliseconds.  Valid values:
+            1 ~ 65535 — receive window duration in ms, then stop automatically.
+            0         — stop an ongoing receive session immediately.
+        Note: the value 65535 keeps the radio in continuous receive mode until
+        stopped explicitly with p2p_receive(0).
+        """
+        if not 0 <= timeout <= 65535:
+            logging.warning("Timeout must be between 0 and 65535 milliseconds")
             return None
         response, ok = check_success(self, f"AT+PRECV={timeout}")
         if ok:
@@ -1134,7 +1225,7 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+ENCKEY={key}")
             if ok:
                 return response
-        logging.warning("Encrytion key must be exactly 32 hexadecimal characters")
+        logging.warning("Encryption key must be exactly 32 hexadecimal characters")
 
     def get_p2p_crypt_status(self):
         response, ok = check_success(self, "AT+PCRYPT=?")
@@ -1264,11 +1355,18 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def set_p2p_bandwidth(self, band: int):
+    def set_p2p_bandwidth(self, band: int) -> str | None:
+        """AT+BANDWIDTH=<band> — set the P2P LoRa bandwidth (legacy command).
+
+        *band* encoding (same as AT+PBW):
+            0=125 kHz, 1=250 kHz, 2=500 kHz, 3=7.8 kHz, 4=10.4 kHz,
+            5=15.63 kHz, 6=20.83 kHz, 7=31.25 kHz, 8=41.67 kHz, 9=62.5 kHz.
+        Valid range: 0-9.
+        """
         if not 0 <= band <= 9:
             logging.warning("Bandwidth must be between 0 and 9")
             return None
-        response, ok = check_success(self, f"AT+basicConfig={band}")
+        response, ok = check_success(self, f"AT+BANDWIDTH={band}")
         if ok:
             return response
 
@@ -1277,9 +1375,14 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def set_p2p_spread_factor(self, sf: int):
-        if not 5 <= sf <= 12:
-            logging.warning("Spreading Facotr must be between 5 and 12")
+    def set_p2p_spread_factor(self, sf: int) -> str | None:
+        """AT+SPREADINGFACTOR=<sf> — set the P2P spreading factor (legacy command).
+
+        Valid range: 6-12.  Note: SF5 is only valid for the AT+PSF individual
+        command; the legacy AT+SPREADINGFACTOR command does not accept SF5.
+        """
+        if not 6 <= sf <= 12:
+            logging.warning("Spreading Factor must be between 6 and 12")
             return None
         response, ok = check_success(self, f"AT+SPREADINGFACTOR={sf}")
         if ok:
@@ -1303,8 +1406,12 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def set_p2p_preamble_length_2(self, preamble_len: int):
-        if not 5 <= preamble_len <= 65535:
+    def set_p2p_preamble_length_2(self, preamble_len: int) -> str | None:
+        """AT+PREAMBLELENGTH=<len> — set the P2P preamble length (legacy command).
+
+        Valid range: 5-65535 symbols.
+        """
+        if not (5 <= preamble_len <= 65535):
             logging.warning("Preamble length must be between 5 and 65535")
             return None
         response, ok = check_success(self, f"AT+PREAMBLELENGTH={preamble_len}")
@@ -1324,35 +1431,171 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def get_p2p_fixed_length_payload(self):
-        response, ok = check_success(self, "AT+FIXEDLENGTHPAYLOAD=?")
+    def get_p2p_fixed_length_payload(self) -> str | None:
+        """AT+FIXLENGTHPAYLOAD=? — get the fixed-length payload mode (legacy command)."""
+        response, ok = check_success(self, "AT+FIXLENGTHPAYLOAD=?")
         if ok:
             return response
 
-    def set_p2p_fixed_length_payload(self, on: bool):
+    def set_p2p_fixed_length_payload(self, on: bool) -> str | None:
+        """AT+FIXLENGTHPAYLOAD=<mode> — enable (1) or disable (0) fixed-length payload mode (legacy command)."""
         mode = 1 if on else 0
-        response, ok = check_success(self, f"AT+FIXEDLENGTHPAYLOAD={mode}")
+        response, ok = check_success(self, f"AT+FIXLENGTHPAYLOAD={mode}")
         if ok:
             return response
 
     # RF TEST
 
-    def rf_rssi_test(self):
+    def rf_rssi_test(self) -> str | None:
+        """AT+TRSSI=? — execute an RSSI test and return the measured value."""
         response, ok = check_success(self, "AT+TRSSI=?")
         if ok:
             return response
 
-    def rf_tone_test(self):
+    def rf_tone_test(self) -> str | None:
+        """AT+TTONE — start a continuous RF tone test on the current frequency."""
         response, ok = check_success(self, "AT+TTONE")
         if ok:
             return response
 
-    def set_rf_tx_test_packet_number(self, number: int):
+    def set_rf_tx_test_packet_number(self, number: int) -> str | None:
+        """AT+TTX=<n> — transmit *n* test packets at the current RF configuration."""
         response, ok = check_success(self, f"AT+TTX={number}")
         if ok:
             return response
 
-    def set_rf_rx_test_packet_number(self, number: int):
+    def set_rf_rx_test_packet_number(self, number: int) -> str | None:
+        """AT+TRX=<n> — receive *n* test packets and report results."""
         response, ok = check_success(self, f"AT+TRX={number}")
+        if ok:
+            return response
+
+    def set_rf_test_config(
+        self,
+        freq: int,
+        sf: int,
+        bw: int,
+        cr: int,
+        preamble: int,
+        tp: int,
+        payload_len: int,
+        nb_packets: int,
+    ) -> str | None:
+        """AT+TCONF — configure RF test parameters.
+
+        Args:
+            freq:        Frequency in Hz (150000000 – 960000000).
+            sf:          Spreading factor (6-12).
+            bw:          Bandwidth index (0-9, same encoding as AT+PBW).
+            cr:          Coding rate (0-3).
+            preamble:    Preamble length (2-65535).
+            tp:          TX power in dBm (5-22).
+            payload_len: Payload length in bytes (1-255).
+            nb_packets:  Number of packets (0 = infinite).
+
+        Format sent: AT+TCONF=<freq>:<sf>:<bw>:<cr>:<preamble>:<tp>:<payload_len>:<nb_packets>
+        """
+        if not 150000000 <= freq <= 960000000:
+            logging.warning("Frequency must be between 150 MHz and 960 MHz")
+            return None
+        if not 6 <= sf <= 12:
+            logging.warning("Spreading factor must be between 6 and 12")
+            return None
+        if not 0 <= bw <= 9:
+            logging.warning("Bandwidth index must be between 0 and 9")
+            return None
+        if cr not in (0, 1, 2, 3):
+            logging.warning("Coding rate must be 0, 1, 2 or 3")
+            return None
+        if not 2 <= preamble <= 65535:
+            logging.warning("Preamble length must be between 2 and 65535")
+            return None
+        if not 5 <= tp <= 22:
+            logging.warning("TX power must be between 5 and 22")
+            return None
+        if not 1 <= payload_len <= 255:
+            logging.warning("Payload length must be between 1 and 255 bytes")
+            return None
+        if nb_packets < 0:
+            logging.warning("Number of packets must be >= 0 (0 = infinite)")
+            return None
+        response, ok = check_success(
+            self,
+            f"AT+TCONF={freq}:{sf}:{bw}:{cr}:{preamble}:{tp}:{payload_len}:{nb_packets}",
+        )
+        if ok:
+            return response
+
+    def rf_tone_hopping_test(self, start_freq: int, stop_freq: int) -> str | None:
+        """AT+TTH=<start_freq>:<stop_freq> — start a tone-hopping test.
+
+        The radio sweeps from *start_freq* to *stop_freq* (both in Hz).
+        Stop the test with rf_test_stop().
+        """
+        if not 150000000 <= start_freq <= 960000000:
+            logging.warning("Start frequency must be between 150 MHz and 960 MHz")
+            return None
+        if not 150000000 <= stop_freq <= 960000000:
+            logging.warning("Stop frequency must be between 150 MHz and 960 MHz")
+            return None
+        response, ok = check_success(self, f"AT+TTH={start_freq}:{stop_freq}")
+        if ok:
+            return response
+
+    def rf_test_stop(self) -> str | None:
+        """AT+TOFF — stop any ongoing RF test (tone, hopping, TX, or RX).
+
+        This is the only way to terminate a continuous test (e.g. AT+TTONE or
+        AT+TTH with no stop condition).  Always call this before switching back
+        to normal LoRaWAN or P2P operation.
+        """
+        response, ok = check_success(self, "AT+TOFF")
+        if ok:
+            return response
+
+    def rf_certification_test(self, mode: int) -> str | None:
+        """AT+CERTIF=<mode> — enter or exit LoRaWAN certification test mode.
+
+        mode 0 — disable certification test mode.
+        mode 1 — enable certification test mode.
+        """
+        if mode not in (0, 1):
+            logging.warning("Certification test mode must be 0 (disable) or 1 (enable)")
+            return None
+        response, ok = check_success(self, f"AT+CERTIF={mode}")
+        if ok:
+            return response
+
+    def rf_continuous_wave_test(self, freq: int, power: int, time_s: int) -> str | None:
+        """AT+CW=<freq>:<power>:<time> — transmit a continuous wave signal.
+
+        Args:
+            freq:   Frequency in Hz (150000000 – 960000000).
+            power:  TX power in dBm (5-22).
+            time_s: Duration in seconds (0 = transmit until AT+TOFF is called).
+        """
+        if not 150000000 <= freq <= 960000000:
+            logging.warning("Frequency must be between 150 MHz and 960 MHz")
+            return None
+        if not 5 <= power <= 22:
+            logging.warning("TX power must be between 5 and 22 dBm")
+            return None
+        if time_s < 0:
+            logging.warning("Duration must be >= 0 (0 = continuous until AT+TOFF)")
+            return None
+        response, ok = check_success(self, f"AT+CW={freq}:{power}:{time_s}")
+        if ok:
+            return response
+
+    def rf_rx_test_with_random_payload(self, nb_packets: int) -> str | None:
+        """AT+TRTH=<n> — receive *n* test packets with a random payload pattern.
+
+        *nb_packets* must be > 0.  Results (received count, PER) are reported
+        asynchronously after the last packet window closes.
+        """
+        if nb_packets < 1:
+            logging.warning("Number of packets must be at least 1")
+            return None
+        response, ok = check_success(self, f"AT+TRTH={nb_packets}")
         if ok:
             return response
