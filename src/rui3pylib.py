@@ -305,7 +305,7 @@ class RUI3Node(serial.Serial):
     def set_low_power_mode_level(self, level: int):
         # Only effective on RAK3172; has no effect on other modules.
         # level 1 = STOP1 Mode, level 2 = STOP2 Mode
-        if level != 1 and level != 2:
+        if level not in (1, 2):
             logging.warning("Level must be either 1 (STOP1) or 2 (STOP2)")
             return None
         response, ok = check_success(self, f"AT+LPMLVL={level}")
@@ -572,7 +572,7 @@ class RUI3Node(serial.Serial):
     def set_network_join_mode(self, mode: int = 0):
         # 0 = ABP mode
         # 1 = OTAA mode
-        if mode != 0 and mode != 1:
+        if mode not in (0, 1):
             logging.warning("Parameter must be either 0 (ABP) or 1 (OTAA)")
             return None
         response, ok = check_success(self, f"AT+NJM={mode}")
