@@ -957,13 +957,18 @@ class RUI3Node(serial.Serial):
     def set_receive_window_2_data_rate(self, value: int) -> str | None:
         """AT+RX2DR=<value> — set the RX2 receive window data rate index.
 
-        Valid range varies by region:
-            0-5  — EU868, AS923, KR920, CN470.
-            8-13 — US915, AU915, LA915.
-        Values 6 and 7 are not valid in any supported region.
+        Accepted values per region:
+            EU433 / RU864 / IN865 / EU868 / CN470 / KR920 — 0-5.
+            AS923 — 2-5.
+            US915 / AU915 / LA915 — 8-13.
+        The firmware accepts the full ranges [0-7] and [8-13]; the caller is
+        responsible for passing a value legal for the active region.
         """
-        if not 0 <= value <= 13:
-            logging.warning("Value must be between 0 and 13")
+        if not (0 <= value <= 7 or 8 <= value <= 13):
+            logging.warning(
+                "RX2 data rate must be in range 0-7 (EU/AS/KR/CN) "
+                "or 8-13 (US915/AU915/LA915)"
+            )
             return None
         response, ok = check_success(self, f"AT+RX2DR={value}")
         if ok:
@@ -1564,16 +1569,25 @@ class RUI3Node(serial.Serial):
             return response
 
     def p2p_receive(self, timeout: int) -> str | None:
-        """AT+PRECV=<timeout> — start P2P receive mode.
+        """AT+PRECV=<timeout> — configure the P2P receive window.
 
-        *timeout* is in milliseconds.  Valid values:
-            1 ~ 65535 — receive window duration in ms, then stop automatically.
-            0         — stop an ongoing receive session immediately.
-        Note: the value 65535 keeps the radio in continuous receive mode until
-        stopped explicitly with p2p_receive(0).
+        *timeout* values and their exact meanings per documentation:
+            1 – 65532 — open RX window for *timeout* ms, then auto-stop and
+                         emit +EVT:RXP2P RECEIVE TIMEOUT if nothing received.
+            65533      — continuous RX; TX is still allowed (after each TX
+                         the device automatically switches back to RX).
+            65534      — continuous RX; no TX is possible until
+                         p2p_receive(0) is called.
+            65535      — RX until exactly one packet is received, then
+                         automatically switch back to TX mode.
+            0          — stop any ongoing RX session and switch to TX mode.
+
+        NOTE: when set to 65534 (continuous RX), any new call to p2p_receive()
+        is rejected by the firmware with AT_BUSY_ERROR.  You must first call
+        p2p_receive(0) to exit continuous RX before changing any setting.
         """
         if not 0 <= timeout <= 65535:
-            logging.warning("Timeout must be between 0 and 65535 milliseconds")
+            logging.warning("Timeout must be between 0 and 65535")
             return None
         response, ok = check_success(self, f"AT+PRECV={timeout}")
         if ok:
@@ -1822,11 +1836,10 @@ class RUI3Node(serial.Serial):
     def set_p2p_spread_factor(self, sf: int) -> str | None:
         """AT+SPREADINGFACTOR=<sf> — set the P2P LoRa spreading factor (legacy command).
 
-        Valid range: 6-12.  Note: SF5 is only valid for the AT+PSF individual
-        command; this legacy command does not accept SF5.
+        Valid range: 5-12, matching AT+PSF.
         """
-        if not 6 <= sf <= 12:
-            logging.warning("Spreading Factor must be between 6 and 12")
+        if not 5 <= sf <= 12:
+            logging.warning("Spreading factor must be between 5 and 12")
             return None
         response, ok = check_success(self, f"AT+SPREADINGFACTOR={sf}")
         if ok:
@@ -1945,72 +1958,165 @@ class RUI3Node(serial.Serial):
     def set_rf_test_config(
         self,
         freq: int,
-        sf: int,
+        power: int,
         bw: int,
+        sf: int,
         cr: int,
-        preamble: int,
-        tp: int,
+        lna: int,
+        pa_boost: int,
+        modulation: int,
         payload_len: int,
-        nb_packets: int,
+        fdev: int,
+        lowdropt: int,
+        bt: int,
     ) -> str | None:
-        """AT+TCONF — configure RF test parameters.
+        """AT+TCONF=<Freq>:<Power>:<Bandwidth>:<SF>:<CR>:<LNA>:<PABoost>:<Modulation>:<PayloadLen>:<FskDeviation>:<LowDRopt>:<BTproduct>
+        — configure the LoRa/FSK RF test parameters.
+
+        This command must be issued before starting any RF test with AT+TTX or
+        AT+TRX.  Use rf_test_stop() (AT+TOFF) to terminate an ongoing test.
+        The number of packets for AT+TTX / AT+TRX is passed to those commands
+        directly, not here.
 
         Args:
-            freq:        Frequency in Hz (150000000 – 960000000).
-            sf:          Spreading factor (6-12).
-            bw:          Bandwidth index (0-9, same encoding as AT+PBW).
-            cr:          Coding rate (0-3).
-            preamble:    Preamble length (2-65535).
-            tp:          TX power in dBm (5-22).
+            freq:       Radio frequency in Hz.
+                            Low-frequency modules (e.g. RAK3172-L):
+                                150000000 – 600000000 Hz.
+                            High-frequency modules (e.g. RAK3172-H):
+                                600000000 – 960000000 Hz.
+            power:      TX output power in dBm (5-22).
+            bw:         Bandwidth.
+                            LoRa mode (index, same encoding as AT+PBW):
+                                0=125 kHz, 1=250 kHz, 2=500 kHz,
+                                3=7.8 kHz, 4=10.4 kHz, 5=15.63 kHz,
+                                6=20.83 kHz, 7=31.25 kHz, 8=41.67 kHz,
+                                9=62.5 kHz.
+                            FSK mode: direct value in Hz (4800-467000).
+            sf:         LoRa spreading factor (5-12).  Ignored in FSK mode.
+            cr:         LoRa coding rate: 1=4/5, 2=4/6, 3=4/7, 4=4/8.
+                            **Note:** this parameter is 1-based, unlike AT+PCR
+                            which is 0-based.  Ignored in FSK mode.
+            lna:        LNA state (0 or 1).  Not implemented in current
+                            firmware; pass 0.
+            pa_boost:   PA Boost state (0 or 1).  Not implemented in current
+                            firmware; pass 0.
+            modulation: Modulation type: 0=FSK, 1=LoRa.
             payload_len: Payload length in bytes (1-255).
-            nb_packets:  Number of packets (0 = infinite).
+            fdev:       FSK frequency deviation in Hz (600-200000).
+                            Only meaningful in FSK mode (modulation=0);
+                            pass any value (e.g. 25000) for LoRa mode.
+            lowdropt:   Low data rate optimisation flag.  Not implemented in
+                            current firmware; pass 0.
+            bt:         Gaussian filter bandwidth-time product for FSK.
+                            Not implemented in current firmware; pass 0.
 
-        Format sent: AT+TCONF=<freq>:<sf>:<bw>:<cr>:<preamble>:<tp>:<payload_len>:<nb_packets>
+        Default values (from documentation):
+            868000000, 14, 0, 7, 1, 0, 0, 1, 4, 25000, 0, 0
+
+        Example (from documentation):
+            AT+TCONF=868000000:14:4:12:1:0:0:1:16:25000:2:3
         """
         if not 150000000 <= freq <= 960000000:
             logging.warning("Frequency must be between 150 MHz and 960 MHz")
             return None
-        if not 6 <= sf <= 12:
-            logging.warning("Spreading factor must be between 6 and 12")
+        if not 5 <= power <= 22:
+            logging.warning("TX power must be between 5 and 22 dBm")
             return None
-        if not 0 <= bw <= 9:
-            logging.warning("Bandwidth index must be between 0 and 9")
+        if modulation not in (0, 1):
+            logging.warning("Modulation must be 0 (FSK) or 1 (LoRa)")
             return None
-        if cr not in (0, 1, 2, 3):
-            logging.warning("Coding rate must be 0, 1, 2 or 3")
+        # Bandwidth validation is modulation-dependent (must be checked
+        # after modulation is validated).
+        if modulation == 1:  # LoRa: index 0-9
+            if not 0 <= bw <= 9:
+                logging.warning(
+                    "Bandwidth index must be 0-9 for LoRa mode "
+                    "(0=125 kHz, 1=250 kHz, 2=500 kHz, 3=7.8 kHz, "
+                    "4=10.4 kHz, 5=15.63 kHz, 6=20.83 kHz, "
+                    "7=31.25 kHz, 8=41.67 kHz, 9=62.5 kHz)"
+                )
+                return None
+        else:  # FSK: direct Hz value
+            if not 4800 <= bw <= 467000:
+                logging.warning("Bandwidth must be 4800-467000 Hz for FSK mode")
+                return None
+        if not 5 <= sf <= 12:
+            logging.warning("Spreading factor must be between 5 and 12")
             return None
-        if not 2 <= preamble <= 65535:
-            logging.warning("Preamble length must be between 2 and 65535")
+        if cr not in (1, 2, 3, 4):
+            logging.warning(
+                "Coding rate must be 1 (4/5), 2 (4/6), 3 (4/7), or 4 (4/8). "
+                "Note: AT+TCONF uses 1-based coding rate, unlike AT+PCR."
+            )
             return None
-        if not 5 <= tp <= 22:
-            logging.warning("TX power must be between 5 and 22")
+        if lna not in (0, 1):
+            logging.warning("LNA state must be 0 or 1")
+            return None
+        if pa_boost not in (0, 1):
+            logging.warning("PA Boost state must be 0 or 1")
             return None
         if not 1 <= payload_len <= 255:
             logging.warning("Payload length must be between 1 and 255 bytes")
             return None
-        if nb_packets < 0:
-            logging.warning("Number of packets must be >= 0 (0 = infinite)")
+        if not 600 <= fdev <= 200000:
+            logging.warning(
+                "FSK frequency deviation must be between 600 and 200000 Hz. "
+                "For LoRa mode this parameter is ignored by the firmware but "
+                "must still be a valid value; use the default 25000."
+            )
             return None
         response, ok = check_success(
             self,
-            f"AT+TCONF={freq}:{sf}:{bw}:{cr}:{preamble}:{tp}:{payload_len}:{nb_packets}",
+            f"AT+TCONF={freq}:{power}:{bw}:{sf}:{cr}:{lna}:{pa_boost}"
+            f":{modulation}:{payload_len}:{fdev}:{lowdropt}:{bt}",
         )
         if ok:
             return response
 
-    def rf_tone_hopping_test(self, start_freq: int, stop_freq: int) -> str | None:
-        """AT+TTH=<start_freq>:<stop_freq> — start a tone-hopping test.
+    def rf_tone_hopping_test(
+        self,
+        fstart: int,
+        fstop: int,
+        fdelta: int,
+        packet_nb: int,
+    ) -> str | None:
+        """AT+TTH=<Fstart>:<Fstop>:<FDelta>:<PacketNb> — start a sequential RF TX hopping test.
 
-        The radio sweeps from *start_freq* to *stop_freq* (both in Hz).
-        Stop the test with rf_test_stop().
+        The radio transmits *packet_nb* packets stepping through frequencies from
+        *fstart* to *fstop* in increments of *fdelta* Hz.  The modulation
+        parameters are taken from the last AT+TCONF configuration.
+
+        This is a sequential sweep; for a random-order sweep use
+        rf_tx_fhss_hopping_test() (AT+TRTH).
+
+        Example — 6 hops from 868 MHz to 868.5 MHz in 100 kHz steps:
+            AT+TTH=868000000:868500000:100000:6
+
+        Args:
+            fstart:    Start frequency in Hz (150000000-960000000).
+            fstop:     Stop frequency in Hz (150000000-960000000).
+                           Must be greater than *fstart*.
+            fdelta:    Frequency step between hops in Hz (> 0).
+            packet_nb: Number of packets to transmit per hop (> 0).
         """
-        if not 150000000 <= start_freq <= 960000000:
+        if not 150000000 <= fstart <= 960000000:
             logging.warning("Start frequency must be between 150 MHz and 960 MHz")
             return None
-        if not 150000000 <= stop_freq <= 960000000:
+        if not 150000000 <= fstop <= 960000000:
             logging.warning("Stop frequency must be between 150 MHz and 960 MHz")
             return None
-        response, ok = check_success(self, f"AT+TTH={start_freq}:{stop_freq}")
+        if fstop <= fstart:
+            logging.warning("Stop frequency must be greater than start frequency")
+            return None
+        if fdelta <= 0:
+            logging.warning("Frequency delta must be greater than 0 Hz")
+            return None
+        if packet_nb < 1:
+            logging.warning("Number of packets must be at least 1")
+            return None
+        response, ok = check_success(
+            self, f"AT+TTH={fstart}:{fstop}:{fdelta}:{packet_nb}"
+        )
         if ok:
             return response
 
@@ -2025,26 +2131,31 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def rf_certification_test(self, mode: int) -> str | None:
-        """AT+CERTIF=<mode> — enter or exit LoRaWAN certification test mode.
+    def rf_certification_test(self) -> str | None:
+        """AT+CERTIF — enter LoRaWAN certification test mode.
 
-        mode 0 — disable certification test mode.
-        mode 1 — enable certification test mode.
+        The module enters certification mode and handles test frames from the
+        certification tool automatically.  The internal timer for data
+        transmission is set to 5 seconds.
+        AT_BUSY_ERROR is returned if a frequency tone test is already running.
         """
-        if mode not in (0, 1):
-            logging.warning("Certification test mode must be 0 (disable) or 1 (enable)")
-            return None
-        response, ok = check_success(self, f"AT+CERTIF={mode}")
+        response, ok = check_success(self, "AT+CERTIF")
         if ok:
             return response
 
-    def rf_continuous_wave_test(self, freq: int, power: int, time_s: int) -> str | None:
+    def rf_continuous_wave_test(
+        self, freq: int, power: int, time_ms: int
+    ) -> str | None:
         """AT+CW=<freq>:<power>:<time> — transmit a continuous wave signal.
 
         Args:
-            freq:   Frequency in Hz (150000000 – 960000000).
-            power:  TX power in dBm (5-22).
-            time_s: Duration in seconds (0 = transmit until AT+TOFF is called).
+            freq:    Radio frequency in Hz.
+                         Low-frequency modules: 150000000-600000000 Hz.
+                         High-frequency modules: 600000000-960000000 Hz.
+            power:   TX power in dBm (5-22).
+            time_ms: Duration in milliseconds (0-65535).
+                         0 means transmit continuously until rf_test_stop()
+                         (AT+TOFF) is called.
         """
         if not 150000000 <= freq <= 960000000:
             logging.warning("Frequency must be between 150 MHz and 960 MHz")
@@ -2052,22 +2163,59 @@ class RUI3Node(serial.Serial):
         if not 5 <= power <= 22:
             logging.warning("TX power must be between 5 and 22 dBm")
             return None
-        if time_s < 0:
-            logging.warning("Duration must be >= 0 (0 = continuous until AT+TOFF)")
+        if not 0 <= time_ms <= 65535:
+            logging.warning("Duration must be between 0 and 65535 ms (0 = continuous)")
             return None
-        response, ok = check_success(self, f"AT+CW={freq}:{power}:{time_s}")
+        response, ok = check_success(self, f"AT+CW={freq}:{power}:{time_ms}")
         if ok:
             return response
 
-    def rf_rx_test_with_random_payload(self, nb_packets: int) -> str | None:
-        """AT+TRTH=<n> — receive *n* test packets with a random payload pattern.
+    def rf_tx_fhss_hopping_test(
+        self,
+        start_freq: int,
+        end_freq: int,
+        hop_step: int,
+        hop_count: int,
+    ) -> str | None:
+        """AT+TRTH=<start_freq>:<end_freq>:<hop_step>:<hop_count> — start an FHSS TX hopping test.
 
-        *nb_packets* must be > 0.  Results (received count, PER) are reported
-        asynchronously after the last packet window closes.
+        The radio transmits sequentially across *hop_count* channels, starting
+        at *start_freq*, incrementing by *hop_step* Hz each hop, and stopping
+        at or before *end_freq*.  The modulation parameters (SF, BW, power,
+        payload) used for each hop are those previously configured via
+        set_rf_test_config() (AT+TCONF).
+
+        This command requires the device to be in LoRaWAN mode (AT+NWM=1) with
+        the appropriate region set (AT+BAND).  Call rf_test_stop() (AT+TOFF)
+        to terminate the test early.
+
+        Example — US915 FHSS across 64 channels at 200 kHz spacing:
+            AT+TRTH=902300000:914900000:200000:64
+
+        Args:
+            start_freq: Start frequency in Hz (150000000-960000000).
+            end_freq:   End frequency in Hz (150000000-960000000).
+                            Must be greater than *start_freq*.
+            hop_step:   Frequency step between hops in Hz (> 0).
+            hop_count:  Total number of hops to perform (> 0).
         """
-        if nb_packets < 1:
-            logging.warning("Number of packets must be at least 1")
+        if not 150000000 <= start_freq <= 960000000:
+            logging.warning("Start frequency must be between 150 MHz and 960 MHz")
             return None
-        response, ok = check_success(self, f"AT+TRTH={nb_packets}")
+        if not 150000000 <= end_freq <= 960000000:
+            logging.warning("End frequency must be between 150 MHz and 960 MHz")
+            return None
+        if end_freq <= start_freq:
+            logging.warning("End frequency must be greater than start frequency")
+            return None
+        if hop_step <= 0:
+            logging.warning("Hop step must be greater than 0 Hz")
+            return None
+        if hop_count < 1:
+            logging.warning("Hop count must be at least 1")
+            return None
+        response, ok = check_success(
+            self, f"AT+TRTH={start_freq}:{end_freq}:{hop_step}:{hop_count}"
+        )
         if ok:
             return response
