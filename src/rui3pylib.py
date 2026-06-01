@@ -1550,8 +1550,8 @@ class RUI3Node(serial.Serial):
                 return response
         else:
             logging.warning(
-            "Payload must be an even number of hexadecimal characters between 2 and 500"
-        )
+                "Payload must be an even number of hexadecimal characters between 2 and 500"
+            )
             return None
 
     def get_p2p_channel_activity(self) -> str | None:
@@ -1631,7 +1631,7 @@ class RUI3Node(serial.Serial):
         else:
             logging.warning("Encryption key must be exactly 32 hexadecimal characters")
             return None
-        
+
     def get_p2p_crypt_status(self) -> str | None:
         """AT+PCRYPT=? — return the P2P additional encryption layer state (0 = disabled, 1 = enabled)."""
         response, ok = check_success(self, "AT+PCRYPT=?")
@@ -1667,7 +1667,7 @@ class RUI3Node(serial.Serial):
         else:
             logging.warning("Key must be exactly 16 hexadecimal characters")
             return None
-        
+
     def get_p2p_crypt_iv(self) -> str | None:
         """AT+CRYPIV=? — return the 16-byte P2P encryption initialisation vector as 32 hex characters."""
         response, ok = check_success(self, "AT+CRYPIV=?")
