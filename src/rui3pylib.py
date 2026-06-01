@@ -283,6 +283,7 @@ class RUI3Node(serial.Serial):
                 return response
         else:
             logging.warning("Invalid format: it should be like 001122334455")
+            return None
 
     def get_boot_ver(self) -> str | None:
         """AT+BOOTVER=? — return the bootloader version (normal mode).
@@ -1547,9 +1548,11 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+PSEND={payload}")
             if ok:
                 return response
-        logging.warning(
+        else:
+            logging.warning(
             "Payload must be an even number of hexadecimal characters between 2 and 500"
         )
+            return None
 
     def get_p2p_channel_activity(self) -> str | None:
         """AT+CAD=? — return the channel activity detection state (0 = disabled, 1 = enabled)."""
@@ -1625,8 +1628,10 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+ENCKEY={key}")
             if ok:
                 return response
-        logging.warning("Encryption key must be exactly 32 hexadecimal characters")
-
+        else:
+            logging.warning("Encryption key must be exactly 32 hexadecimal characters")
+            return None
+        
     def get_p2p_crypt_status(self) -> str | None:
         """AT+PCRYPT=? — return the P2P additional encryption layer state (0 = disabled, 1 = enabled)."""
         response, ok = check_success(self, "AT+PCRYPT=?")
@@ -1659,8 +1664,10 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+PKEY={key}")
             if ok:
                 return response
-        logging.warning("Key must be exactly 16 hexadecimal characters")
-
+        else:
+            logging.warning("Key must be exactly 16 hexadecimal characters")
+            return None
+        
     def get_p2p_crypt_iv(self) -> str | None:
         """AT+CRYPIV=? — return the 16-byte P2P encryption initialisation vector as 32 hex characters."""
         response, ok = check_success(self, "AT+CRYPIV=?")
@@ -1676,7 +1683,9 @@ class RUI3Node(serial.Serial):
             response, ok = check_success(self, f"AT+CRYPIV={key}")
             if ok:
                 return response
-        logging.warning("CryptIV key must be exactly 32 hexadecimal characters")
+        else:
+            logging.warning("CryptIV key must be exactly 32 hexadecimal characters")
+            return None
 
     def get_p2p_params(self) -> str | None:
         """AT+P2P=? — return all P2P parameters in the format <freq>:<sf>:<bw>:<cr>:<preamble>:<power>."""
@@ -1688,7 +1697,7 @@ class RUI3Node(serial.Serial):
         self,
         freq: int = 868000000,
         sf: int = 7,
-        bandwidth: int = 125,
+        bandwidth: int = 0,
         code_rate: int = 0,
         preamble_len: int = 8,
         tx_power: int = 14,
