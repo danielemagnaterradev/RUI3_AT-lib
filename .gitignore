@@ -1,5 +1,0 @@
-..\.venv
-.\pyvenv.cfg
-.\__pycache__
-rui3pylib_tests\__pycache__
-rui3pylib_tests\.pytest_cache
