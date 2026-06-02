@@ -29,8 +29,8 @@ from conftest import OK_RESPONSE, ERR_PARAM, ERR_BUSY, ERR_NO_NETWORK
 # AT+CFM — confirm mode
 # ===========================================================================
 
-class TestConfirmMode:
 
+class TestConfirmMode:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
@@ -59,8 +59,8 @@ class TestConfirmMode:
 # AT+CFS — confirm status (read-only)
 # ===========================================================================
 
-class TestConfirmStatus:
 
+class TestConfirmStatus:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
@@ -77,8 +77,8 @@ class TestConfirmStatus:
 # AT+JOIN — join LoRaWAN network
 # ===========================================================================
 
-class TestTryJoin:
 
+class TestTryJoin:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
@@ -178,8 +178,8 @@ class TestTryJoin:
 # AT+NJM — network join mode (ABP / OTAA)
 # ===========================================================================
 
-class TestNetworkJoinMode:
 
+class TestNetworkJoinMode:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
@@ -222,8 +222,8 @@ class TestNetworkJoinMode:
 # AT+NJS — join status (read-only)
 # ===========================================================================
 
-class TestNetworkJoinStatus:
 
+class TestNetworkJoinStatus:
     @pytest.mark.cmd_format
     def test_sends_correct_query(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
@@ -240,8 +240,8 @@ class TestNetworkJoinStatus:
 # AT+RECV — last received data (read-only)
 # ===========================================================================
 
-class TestGetLastReceivedData:
 
+class TestGetLastReceivedData:
     @pytest.mark.cmd_format
     def test_sends_correct_query(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
@@ -253,8 +253,8 @@ class TestGetLastReceivedData:
 # AT+SEND — send LoRaWAN uplink
 # ===========================================================================
 
-class TestSendData:
 
+class TestSendData:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     def test_valid_port_and_payload(self, node):
@@ -353,8 +353,8 @@ class TestSendData:
 # AT+LPSEND — long packet send
 # ===========================================================================
 
-class TestSendLongPacketData:
 
+class TestSendLongPacketData:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     def test_valid_confirmed_send(self, node):
@@ -425,8 +425,8 @@ class TestSendLongPacketData:
 # AT+RETY — confirmed packet retransmissions
 # ===========================================================================
 
-class TestConfirmPacketRetransmission:
 
+class TestConfirmPacketRetransmission:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:

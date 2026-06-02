@@ -36,9 +36,18 @@ from conftest import OK_RESPONSE, ERR_PARAM, ERR_BUSY
 
 # Shared valid TCONF parameters
 VALID_LORA_TCONF = dict(
-    freq=868000000, power=14, bw=0, sf=7, cr=1, lna=0,
-    pa_boost=0, modulation=1, payload_len=4, fdev=25000,
-    lowdropt=0, bt=0,
+    freq=868000000,
+    power=14,
+    bw=0,
+    sf=7,
+    cr=1,
+    lna=0,
+    pa_boost=0,
+    modulation=1,
+    payload_len=4,
+    fdev=25000,
+    lowdropt=0,
+    bt=0,
 )
 
 
@@ -46,8 +55,8 @@ VALID_LORA_TCONF = dict(
 # AT+TRSSI=? — RF RSSI tone test (read)
 # ===========================================================================
 
-class TestRfRssiTest:
 
+class TestRfRssiTest:
     @pytest.mark.cmd_format
     @pytest.mark.rf_test
     def test_sends_correct_query(self, node):
@@ -72,8 +81,8 @@ class TestRfRssiTest:
 # AT+TTONE — RF tone test
 # ===========================================================================
 
-class TestRfToneTest:
 
+class TestRfToneTest:
     @pytest.mark.cmd_format
     @pytest.mark.rf_test
     def test_sends_correct_command(self, node):
@@ -98,8 +107,8 @@ class TestRfToneTest:
 # AT+TTX=<n> — RF TX test
 # ===========================================================================
 
-class TestRfTxTestPacketNumber:
 
+class TestRfTxTestPacketNumber:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     @pytest.mark.rf_test
@@ -125,8 +134,8 @@ class TestRfTxTestPacketNumber:
 # AT+TRX=<n> — RF RX test
 # ===========================================================================
 
-class TestRfRxTestPacketNumber:
 
+class TestRfRxTestPacketNumber:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     @pytest.mark.rf_test
@@ -146,8 +155,8 @@ class TestRfRxTestPacketNumber:
 # AT+TCONF — RF test configuration
 # ===========================================================================
 
-class TestSetRfTestConfig:
 
+class TestSetRfTestConfig:
     def _call(self, node, **overrides):
         kwargs = dict(VALID_LORA_TCONF)
         kwargs.update(overrides)
@@ -172,9 +181,18 @@ class TestSetRfTestConfig:
         expected = "AT+TCONF=868000000:14:4:12:1:0:0:1:16:25000:2:3"
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
             node.set_rf_test_config(
-                freq=868000000, power=14, bw=4, sf=12, cr=1,
-                lna=0, pa_boost=0, modulation=1, payload_len=16,
-                fdev=25000, lowdropt=2, bt=3,
+                freq=868000000,
+                power=14,
+                bw=4,
+                sf=12,
+                cr=1,
+                lna=0,
+                pa_boost=0,
+                modulation=1,
+                payload_len=16,
+                fdev=25000,
+                lowdropt=2,
+                bt=3,
             )
             m.assert_called_once_with(node, expected)
 
@@ -237,9 +255,18 @@ class TestSetRfTestConfig:
     def test_fsk_modulation_0_accepted(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
             result = node.set_rf_test_config(
-                freq=868000000, power=14, bw=9600, sf=7, cr=1,
-                lna=0, pa_boost=0, modulation=0,   # FSK
-                payload_len=4, fdev=5000, lowdropt=0, bt=0,
+                freq=868000000,
+                power=14,
+                bw=9600,
+                sf=7,
+                cr=1,
+                lna=0,
+                pa_boost=0,
+                modulation=0,  # FSK
+                payload_len=4,
+                fdev=5000,
+                lowdropt=0,
+                bt=0,
             )
             assert result is not None
 
@@ -279,9 +306,18 @@ class TestSetRfTestConfig:
     def test_fsk_bw_min_4800hz_accepted(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
             result = node.set_rf_test_config(
-                freq=868000000, power=14, bw=4800, sf=7, cr=1,
-                lna=0, pa_boost=0, modulation=0, payload_len=4,
-                fdev=5000, lowdropt=0, bt=0,
+                freq=868000000,
+                power=14,
+                bw=4800,
+                sf=7,
+                cr=1,
+                lna=0,
+                pa_boost=0,
+                modulation=0,
+                payload_len=4,
+                fdev=5000,
+                lowdropt=0,
+                bt=0,
             )
             assert result is not None
 
@@ -291,9 +327,18 @@ class TestSetRfTestConfig:
     def test_fsk_bw_4799hz_rejected(self, node):
         with patch("rui3pylib.check_success") as m:
             result = node.set_rf_test_config(
-                freq=868000000, power=14, bw=4799, sf=7, cr=1,
-                lna=0, pa_boost=0, modulation=0, payload_len=4,
-                fdev=5000, lowdropt=0, bt=0,
+                freq=868000000,
+                power=14,
+                bw=4799,
+                sf=7,
+                cr=1,
+                lna=0,
+                pa_boost=0,
+                modulation=0,
+                payload_len=4,
+                fdev=5000,
+                lowdropt=0,
+                bt=0,
             )
             assert result is None
             m.assert_not_called()
@@ -423,8 +468,8 @@ class TestSetRfTestConfig:
 # AT+TTH — RF TX hopping test (sequential)
 # ===========================================================================
 
-class TestRfToneHoppingTest:
 
+class TestRfToneHoppingTest:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     @pytest.mark.rf_test
@@ -491,8 +536,8 @@ class TestRfToneHoppingTest:
 # AT+TOFF — stop RF test
 # ===========================================================================
 
-class TestRfTestStop:
 
+class TestRfTestStop:
     @pytest.mark.cmd_format
     @pytest.mark.rf_test
     def test_sends_correct_command(self, node):
@@ -511,8 +556,8 @@ class TestRfTestStop:
 # AT+CERTIF — LoRaWAN certification mode
 # ===========================================================================
 
-class TestRfCertificationTest:
 
+class TestRfCertificationTest:
     @pytest.mark.cmd_format
     @pytest.mark.rf_test
     def test_sends_correct_command(self, node):
@@ -531,8 +576,8 @@ class TestRfCertificationTest:
 # AT+CW — continuous wave test
 # ===========================================================================
 
-class TestRfContinuousWaveTest:
 
+class TestRfContinuousWaveTest:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     @pytest.mark.rf_test
@@ -601,8 +646,8 @@ class TestRfContinuousWaveTest:
 # AT+TRTH — FHSS (random-order) TX hopping test
 # ===========================================================================
 
-class TestRfTxFhssHoppingTest:
 
+class TestRfTxFhssHoppingTest:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     @pytest.mark.rf_test

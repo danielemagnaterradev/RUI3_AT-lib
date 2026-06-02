@@ -32,23 +32,23 @@ from conftest import OK_RESPONSE, ERR_PARAM
 
 # ── fixtures ────────────────────────────────────────────────────────────────
 
-VALID_EUI_8B   = "1122334455667788"   # 16 hex chars (8 bytes)
-VALID_KEY_16B  = "01020AFBA1CD4D20010230405A6B7F88"  # 32 hex chars (16 bytes)
-VALID_ADDR_4B  = "01020A0B"           # 8 hex chars (4 bytes)
-VALID_NETID    = "000001"             # 6 hex chars (3 bytes)
+VALID_EUI_8B = "1122334455667788"  # 16 hex chars (8 bytes)
+VALID_KEY_16B = "01020AFBA1CD4D20010230405A6B7F88"  # 32 hex chars (16 bytes)
+VALID_ADDR_4B = "01020A0B"  # 8 hex chars (4 bytes)
+VALID_NETID = "000001"  # 6 hex chars (3 bytes)
 
-INVALID_SHORT_EUI   = "112233445566778"   # 15 chars
-INVALID_LONG_EUI    = "11223344556677889"  # 17 chars
-INVALID_HEX_EUI     = "112233445566GGGG"  # 'G' not hex
-INVALID_SHORT_KEY   = "01020AFBA1CD4D20010230405A6B7F"  # 30 chars
-INVALID_LONG_KEY    = "01020AFBA1CD4D20010230405A6B7F8899"  # 34 chars
-INVALID_HEX_KEY     = "01020AFBA1CD4D20010230405A6B7FGG"
-INVALID_SHORT_ADDR  = "01020A"        # 6 chars
-INVALID_LONG_ADDR   = "01020A0B0C"    # 10 chars
-INVALID_HEX_ADDR    = "0102GG0B"
-INVALID_SHORT_NETID = "0000"          # 4 chars
-INVALID_LONG_NETID  = "00000100"      # 8 chars
-INVALID_HEX_NETID   = "0000GG"
+INVALID_SHORT_EUI = "112233445566778"  # 15 chars
+INVALID_LONG_EUI = "11223344556677889"  # 17 chars
+INVALID_HEX_EUI = "112233445566GGGG"  # 'G' not hex
+INVALID_SHORT_KEY = "01020AFBA1CD4D20010230405A6B7F"  # 30 chars
+INVALID_LONG_KEY = "01020AFBA1CD4D20010230405A6B7F8899"  # 34 chars
+INVALID_HEX_KEY = "01020AFBA1CD4D20010230405A6B7FGG"
+INVALID_SHORT_ADDR = "01020A"  # 6 chars
+INVALID_LONG_ADDR = "01020A0B0C"  # 10 chars
+INVALID_HEX_ADDR = "0102GG0B"
+INVALID_SHORT_NETID = "0000"  # 4 chars
+INVALID_LONG_NETID = "00000100"  # 8 chars
+INVALID_HEX_NETID = "0000GG"
 
 
 def _check_setter_valid(node, method: str, value: str, expected_cmd: str):
@@ -77,8 +77,8 @@ def _check_getter(node, method: str, expected_cmd: str):
 # AT+DEVEUI — device EUI (OTAA)
 # ===========================================================================
 
-class TestDeviceEui:
 
+class TestDeviceEui:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         _check_getter(node, "get_device_eui", "AT+DEVEUI=?")
@@ -86,8 +86,9 @@ class TestDeviceEui:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     def test_set_valid_eui(self, node):
-        _check_setter_valid(node, "set_device_eui", VALID_EUI_8B,
-                            f"AT+DEVEUI={VALID_EUI_8B}")
+        _check_setter_valid(
+            node, "set_device_eui", VALID_EUI_8B, f"AT+DEVEUI={VALID_EUI_8B}"
+        )
 
     @pytest.mark.happy_path
     def test_set_lowercase_hex_accepted(self, node):
@@ -132,8 +133,8 @@ class TestDeviceEui:
 # AT+APPEUI — application EUI / JoinEUI (OTAA)
 # ===========================================================================
 
-class TestAppEui:
 
+class TestAppEui:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         _check_getter(node, "get_app_eui", "AT+APPEUI=?")
@@ -174,8 +175,8 @@ class TestAppEui:
 # AT+APPKEY — application key (OTAA)
 # ===========================================================================
 
-class TestAppKey:
 
+class TestAppKey:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         _check_getter(node, "get_app_key", "AT+APPKEY=?")
@@ -183,8 +184,9 @@ class TestAppKey:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     def test_set_valid_key(self, node):
-        _check_setter_valid(node, "set_app_key", VALID_KEY_16B,
-                            f"AT+APPKEY={VALID_KEY_16B}")
+        _check_setter_valid(
+            node, "set_app_key", VALID_KEY_16B, f"AT+APPKEY={VALID_KEY_16B}"
+        )
 
     @pytest.mark.boundary
     @pytest.mark.validation
@@ -214,8 +216,8 @@ class TestAppKey:
 # AT+DEVADDR — device address (ABP)
 # ===========================================================================
 
-class TestDevAddr:
 
+class TestDevAddr:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         _check_getter(node, "get_dev_addr", "AT+DEVADDR=?")
@@ -223,8 +225,9 @@ class TestDevAddr:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     def test_set_valid_address(self, node):
-        _check_setter_valid(node, "set_dev_addr", VALID_ADDR_4B,
-                            f"AT+DEVADDR={VALID_ADDR_4B}")
+        _check_setter_valid(
+            node, "set_dev_addr", VALID_ADDR_4B, f"AT+DEVADDR={VALID_ADDR_4B}"
+        )
 
     @pytest.mark.boundary
     @pytest.mark.validation
@@ -250,8 +253,8 @@ class TestDevAddr:
 # AT+APPSKEY — application session key (ABP)
 # ===========================================================================
 
-class TestAppSKey:
 
+class TestAppSKey:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         _check_getter(node, "get_app_s_key", "AT+APPSKEY=?")
@@ -259,8 +262,9 @@ class TestAppSKey:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     def test_set_valid_key(self, node):
-        _check_setter_valid(node, "set_app_s_key", VALID_KEY_16B,
-                            f"AT+APPSKEY={VALID_KEY_16B}")
+        _check_setter_valid(
+            node, "set_app_s_key", VALID_KEY_16B, f"AT+APPSKEY={VALID_KEY_16B}"
+        )
 
     @pytest.mark.boundary
     @pytest.mark.validation
@@ -286,8 +290,8 @@ class TestAppSKey:
 # AT+NWKSKEY — network session key (ABP)
 # ===========================================================================
 
-class TestNetworkSKey:
 
+class TestNetworkSKey:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         _check_getter(node, "get_network_s_key", "AT+NWKSKEY=?")
@@ -295,8 +299,9 @@ class TestNetworkSKey:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     def test_set_valid_key(self, node):
-        _check_setter_valid(node, "set_network_s_key", VALID_KEY_16B,
-                            f"AT+NWKSKEY={VALID_KEY_16B}")
+        _check_setter_valid(
+            node, "set_network_s_key", VALID_KEY_16B, f"AT+NWKSKEY={VALID_KEY_16B}"
+        )
 
     @pytest.mark.boundary
     @pytest.mark.validation
@@ -322,8 +327,8 @@ class TestNetworkSKey:
 # AT+NETID — network identifier (3 bytes)
 # ===========================================================================
 
-class TestNetworkId:
 
+class TestNetworkId:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         _check_getter(node, "get_network_id", "AT+NETID=?")
@@ -331,8 +336,9 @@ class TestNetworkId:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     def test_set_valid_netid(self, node):
-        _check_setter_valid(node, "set_network_id", VALID_NETID,
-                            f"AT+NETID={VALID_NETID}")
+        _check_setter_valid(
+            node, "set_network_id", VALID_NETID, f"AT+NETID={VALID_NETID}"
+        )
 
     @pytest.mark.boundary
     @pytest.mark.validation
@@ -358,8 +364,8 @@ class TestNetworkId:
 # AT+MCROOTKEY — multicast root key (read-only)
 # ===========================================================================
 
-class TestMulticastRootKey:
 
+class TestMulticastRootKey:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         _check_getter(node, "get_multicast_root_key", "AT+MCROOTKEY=?")
@@ -371,5 +377,6 @@ class TestMulticastRootKey:
 
     def test_no_setter_exists(self, node):
         """AT+MCROOTKEY is read-only; there must be no setter method."""
-        assert not hasattr(node, "set_multicast_root_key"), \
+        assert not hasattr(node, "set_multicast_root_key"), (
             "set_multicast_root_key should not exist (read-only command)"
+        )

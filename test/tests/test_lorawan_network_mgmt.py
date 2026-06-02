@@ -38,8 +38,8 @@ from conftest import OK_RESPONSE, ERR_PARAM, ERR_BUSY
 # AT+ADR — adaptive data rate
 # ===========================================================================
 
-class TestAdaptiveRate:
 
+class TestAdaptiveRate:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -72,8 +72,8 @@ class TestAdaptiveRate:
 # AT+CLASS — LoRaWAN device class
 # ===========================================================================
 
-class TestLorawanClass:
 
+class TestLorawanClass:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -140,8 +140,8 @@ class TestLorawanClass:
 # AT+DCS — duty cycle
 # ===========================================================================
 
-class TestDutyCycle:
 
+class TestDutyCycle:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -174,8 +174,8 @@ class TestDutyCycle:
 # AT+DR — data rate index
 # ===========================================================================
 
-class TestDataRate:
 
+class TestDataRate:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -230,8 +230,8 @@ class TestDataRate:
 # AT+JN1DL — join accept delay RX1 (1-14 s)
 # ===========================================================================
 
-class TestJoinDelayRx1:
 
+class TestJoinDelayRx1:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -280,8 +280,8 @@ class TestJoinDelayRx1:
 # AT+JN2DL — join accept delay RX2 (2-15 s)
 # ===========================================================================
 
-class TestJoinDelayRx2:
 
+class TestJoinDelayRx2:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -322,8 +322,8 @@ class TestJoinDelayRx2:
 # AT+PNM — public network mode
 # ===========================================================================
 
-class TestPublicNetworkMode:
 
+class TestPublicNetworkMode:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -350,8 +350,8 @@ class TestPublicNetworkMode:
 # AT+RX1DL — RX1 window delay (1-15 s)
 # ===========================================================================
 
-class TestRx1Delay:
 
+class TestRx1Delay:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -394,8 +394,8 @@ class TestRx1Delay:
 # AT+RX2DL — RX2 window delay (2-15 s)
 # ===========================================================================
 
-class TestRx2Delay:
 
+class TestRx2Delay:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -436,8 +436,8 @@ class TestRx2Delay:
 # AT+RX2DR — RX2 data rate ([0-7] or [8-13])
 # ===========================================================================
 
-class TestRx2DataRate:
 
+class TestRx2DataRate:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -491,8 +491,8 @@ class TestRx2DataRate:
 # AT+RX2FQ — RX2 frequency (read-only)
 # ===========================================================================
 
-class TestRx2Freq:
 
+class TestRx2Freq:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -512,8 +512,8 @@ class TestRx2Freq:
 # AT+TXP — transmit power (0-14)
 # ===========================================================================
 
-class TestTransmitPower:
 
+class TestTransmitPower:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -555,8 +555,8 @@ class TestTransmitPower:
 # AT+LINKCHECK — link check mode (0, 1, 2)
 # ===========================================================================
 
-class TestLinkCheck:
 
+class TestLinkCheck:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -566,11 +566,14 @@ class TestLinkCheck:
 
     @pytest.mark.happy_path
     @pytest.mark.lorawan
-    @pytest.mark.parametrize("value,expected", [
-        (0, "AT+LINKCHECK=0"),
-        (1, "AT+LINKCHECK=1"),
-        (2, "AT+LINKCHECK=2"),
-    ])
+    @pytest.mark.parametrize(
+        "value,expected",
+        [
+            (0, "AT+LINKCHECK=0"),
+            (1, "AT+LINKCHECK=1"),
+            (2, "AT+LINKCHECK=2"),
+        ],
+    )
     def test_set_valid_values(self, node, value, expected):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
             result = node.set_link_check(value)
@@ -596,8 +599,8 @@ class TestLinkCheck:
 # AT+LBT — Listen Before Talk on/off
 # ===========================================================================
 
-class TestListenBeforeTalk:
 
+class TestListenBeforeTalk:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -624,8 +627,8 @@ class TestListenBeforeTalk:
 # AT+LBTRSSI — LBT RSSI threshold
 # ===========================================================================
 
-class TestListenBeforeTalkRssi:
 
+class TestListenBeforeTalkRssi:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -651,8 +654,8 @@ class TestListenBeforeTalkRssi:
 # AT+LBTSCANTIME — LBT scan time
 # ===========================================================================
 
-class TestListenBeforeTalkScanTime:
 
+class TestListenBeforeTalkScanTime:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -672,8 +675,8 @@ class TestListenBeforeTalkScanTime:
 # AT+TIMEREQ — time request
 # ===========================================================================
 
-class TestTimeReq:
 
+class TestTimeReq:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -700,8 +703,8 @@ class TestTimeReq:
 # AT+LTIME — local time (read-only)
 # ===========================================================================
 
-class TestLocalTime:
 
+class TestLocalTime:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_sends_correct_query(self, node):

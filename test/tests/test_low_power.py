@@ -22,8 +22,8 @@ from conftest import OK_RESPONSE, ERR_PARAM
 # AT+SLEEP — timed sleep mode
 # ===========================================================================
 
-class TestAtSleep:
 
+class TestAtSleep:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     def test_sends_sleep_command_with_duration(self, node):
@@ -72,8 +72,8 @@ class TestAtSleep:
 # AT+LPM — low-power mode on/off
 # ===========================================================================
 
-class TestLowPowerMode:
 
+class TestLowPowerMode:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
@@ -119,8 +119,8 @@ class TestLowPowerMode:
 # AT+LPMLVL — sleep level (RAK3172 only)
 # ===========================================================================
 
-class TestLowPowerModeLevel:
 
+class TestLowPowerModeLevel:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:

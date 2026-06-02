@@ -28,6 +28,7 @@ from conftest import FakeSerial
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _run_send(fs: FakeSerial, cmd: str, wait: float = 0) -> str:
     """Run send_command with time.sleep patched out."""
     with patch("time.sleep"):
@@ -43,6 +44,7 @@ def _make_ok_serial(extra: str = "") -> FakeSerial:
 # ===========================================================================
 # send_command — wire protocol
 # ===========================================================================
+
 
 class TestSendCommandWireProtocol:
     """Verify that send_command correctly encodes and writes the command."""
@@ -77,8 +79,9 @@ class TestSendCommandWireProtocol:
         clearing any buffer.
         """
         from unittest.mock import MagicMock, call
+
         mock_port = MagicMock()
-        mock_port.in_waiting = 0       # no response bytes → empty response
+        mock_port.in_waiting = 0  # no response bytes → empty response
 
         with patch("time.sleep"):
             rui3pylib.send_command(mock_port, "AT", wait=0)
@@ -107,6 +110,7 @@ class TestSendCommandWireProtocol:
 # ===========================================================================
 # send_command — response reading
 # ===========================================================================
+
 
 class TestSendCommandResponseReading:
     """Verify that the receive buffer is drained and decoded correctly."""
@@ -166,6 +170,7 @@ class TestSendCommandResponseReading:
 # ===========================================================================
 # check_success — OK detection logic
 # ===========================================================================
+
 
 class TestCheckSuccessOKDetection:
     """

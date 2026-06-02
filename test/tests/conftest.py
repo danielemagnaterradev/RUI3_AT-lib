@@ -71,6 +71,7 @@ ERR_NO_NETWORK: tuple[str, bool] = ("AT_NO_NETWORK_JOINED\r\n", False)
 # Lightweight testable node fixture
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def node() -> lib.RUI3Node:
     """
@@ -90,13 +91,16 @@ def node() -> lib.RUI3Node:
     next test or, when several accumulate, an ExceptionGroup FAILURE.
     """
     instance = object.__new__(lib.RUI3Node)
-    lib.serial.SerialBase.__init__(instance, port=None)   # ← replaces the manual _port assignment
+    lib.serial.SerialBase.__init__(
+        instance, port=None
+    )  # ← replaces the manual _port assignment
     return instance
 
 
 # ---------------------------------------------------------------------------
 # FakeSerial – used only in test_core_functions.py
 # ---------------------------------------------------------------------------
+
 
 class FakeSerial:
     """

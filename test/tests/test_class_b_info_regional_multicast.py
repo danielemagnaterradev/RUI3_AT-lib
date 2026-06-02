@@ -36,16 +36,16 @@ from conftest import OK_RESPONSE, ERR_PARAM, ERR_BUSY
 
 
 # ── shared keys ─────────────────────────────────────────────────────────────
-VALID_ADDR   = "11223344"
-VALID_KEY32  = "11223344556677881122334455667788"
+VALID_ADDR = "11223344"
+VALID_KEY32 = "11223344556677881122334455667788"
 
 
 # ===========================================================================
 # Class B — AT+PGSLOT periodicity (0-7)
 # ===========================================================================
 
-class TestPeriodicity:
 
+class TestPeriodicity:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -94,8 +94,8 @@ class TestPeriodicity:
 # Class B — AT+BFREQ, AT+BTIME, AT+BGW (read-only)
 # ===========================================================================
 
-class TestClassBReadOnly:
 
+class TestClassBReadOnly:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_beacon_freq_query(self, node):
@@ -140,8 +140,8 @@ class TestClassBReadOnly:
 # LoRaWAN Info — AT+RSSI, AT+ARSSI, AT+SNR (all read-only)
 # ===========================================================================
 
-class TestLorawanInfo:
 
+class TestLorawanInfo:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_rssi_query(self, node):
@@ -186,8 +186,8 @@ class TestLorawanInfo:
 # AT+MASK — channel mask (4 hex chars)
 # ===========================================================================
 
-class TestChannelMask:
 
+class TestChannelMask:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -258,8 +258,8 @@ class TestChannelMask:
 # AT+CHE — eight-channel sub-band mode
 # ===========================================================================
 
-class TestEightChannelMode:
 
+class TestEightChannelMode:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -295,8 +295,8 @@ class TestEightChannelMode:
 # AT+CHS — single-channel mode frequency
 # ===========================================================================
 
-class TestSingleChannelMode:
 
+class TestSingleChannelMode:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -326,8 +326,8 @@ class TestSingleChannelMode:
 # AT+BAND — frequency band (0-12)
 # ===========================================================================
 
-class TestFreqBand:
 
+class TestFreqBand:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_get_sends_correct_query(self, node):
@@ -337,12 +337,24 @@ class TestFreqBand:
 
     @pytest.mark.happy_path
     @pytest.mark.lorawan
-    @pytest.mark.parametrize("band,name", [
-        (0, "EU433"), (1, "CN470"), (2, "RU864"), (3, "IN865"),
-        (4, "EU868"), (5, "US915"), (6, "AU915"), (7, "KR920"),
-        (8, "AS923-1"), (9, "AS923-2"), (10, "AS923-3"),
-        (11, "AS923-4"), (12, "LA915"),
-    ])
+    @pytest.mark.parametrize(
+        "band,name",
+        [
+            (0, "EU433"),
+            (1, "CN470"),
+            (2, "RU864"),
+            (3, "IN865"),
+            (4, "EU868"),
+            (5, "US915"),
+            (6, "AU915"),
+            (7, "KR920"),
+            (8, "AS923-1"),
+            (9, "AS923-2"),
+            (10, "AS923-3"),
+            (11, "AS923-4"),
+            (12, "LA915"),
+        ],
+    )
     def test_all_valid_bands_accepted(self, node, band, name):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
             result = node.set_freq_band(band)
@@ -376,8 +388,8 @@ class TestFreqBand:
 # AT+ADDMULC — add multicast group
 # ===========================================================================
 
-class TestSetMulticastGroup:
 
+class TestSetMulticastGroup:
     def _valid_call(self, node, **overrides):
         kwargs = dict(
             lorawan_class="B",
@@ -396,8 +408,7 @@ class TestSetMulticastGroup:
     @pytest.mark.lorawan
     def test_class_b_sends_correct_cmd(self, node):
         expected = (
-            f"AT+ADDMULC=B:{VALID_ADDR}:{VALID_KEY32}:{VALID_KEY32}"
-            f":868000000:0:0"
+            f"AT+ADDMULC=B:{VALID_ADDR}:{VALID_KEY32}:{VALID_KEY32}:868000000:0:0"
         )
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
             node.set_multicast_group(**self._valid_call(node))
@@ -407,7 +418,9 @@ class TestSetMulticastGroup:
     @pytest.mark.lorawan
     def test_class_c_accepted(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
-            result = node.set_multicast_group(**self._valid_call(node, lorawan_class="C"))
+            result = node.set_multicast_group(
+                **self._valid_call(node, lorawan_class="C")
+            )
             assert result is not None
 
     @pytest.mark.lorawan
@@ -422,7 +435,9 @@ class TestSetMulticastGroup:
     @pytest.mark.lorawan
     def test_class_a_rejected(self, node):
         with patch("rui3pylib.check_success") as m:
-            result = node.set_multicast_group(**self._valid_call(node, lorawan_class="A"))
+            result = node.set_multicast_group(
+                **self._valid_call(node, lorawan_class="A")
+            )
             m.assert_not_called()
             assert result is None
 
@@ -447,7 +462,9 @@ class TestSetMulticastGroup:
     @pytest.mark.lorawan
     def test_bad_nwk_s_key_rejected(self, node):
         with patch("rui3pylib.check_success") as m:
-            result = node.set_multicast_group(**self._valid_call(node, nwk_s_key="XXXX"))
+            result = node.set_multicast_group(
+                **self._valid_call(node, nwk_s_key="XXXX")
+            )
             m.assert_not_called()
             assert result is None
 
@@ -455,7 +472,9 @@ class TestSetMulticastGroup:
     @pytest.mark.lorawan
     def test_bad_app_s_key_rejected(self, node):
         with patch("rui3pylib.check_success") as m:
-            result = node.set_multicast_group(**self._valid_call(node, app_s_key="XXXX"))
+            result = node.set_multicast_group(
+                **self._valid_call(node, app_s_key="XXXX")
+            )
             m.assert_not_called()
             assert result is None
 
@@ -496,8 +515,8 @@ class TestSetMulticastGroup:
 # AT+RMVMULC — remove multicast group
 # ===========================================================================
 
-class TestRemoveMulticastGroup:
 
+class TestRemoveMulticastGroup:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
@@ -523,8 +542,8 @@ class TestRemoveMulticastGroup:
 # AT+LSTMULC — list multicast groups (read-only)
 # ===========================================================================
 
-class TestGetMulticastGroup:
 
+class TestGetMulticastGroup:
     @pytest.mark.cmd_format
     @pytest.mark.lorawan
     def test_sends_correct_query(self, node):

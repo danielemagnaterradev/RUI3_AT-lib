@@ -30,6 +30,7 @@ from conftest import OK_RESPONSE, ERR_PARAM
 # try_connect — AT with 5 s wait, returns bool
 # ===========================================================================
 
+
 class TestTryConnect:
     """
     try_connect() is the *only* public method that:
@@ -58,9 +59,7 @@ class TestTryConnect:
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
             node.try_connect()
             args = m.call_args[0]
-            assert args[1] == "AT", (
-                f"Expected command 'AT', got '{args[1]}'"
-            )
+            assert args[1] == "AT", f"Expected command 'AT', got '{args[1]}'"
 
     @pytest.mark.cmd_format
     def test_uses_extended_5s_wait(self, node):
@@ -71,8 +70,8 @@ class TestTryConnect:
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
             node.try_connect()
             call_args = m.call_args
-            positional = call_args[0]    # (self, cmd, wait) if positional
-            keyword    = call_args[1]    # {'wait': 5.0} if keyword
+            positional = call_args[0]  # (self, cmd, wait) if positional
+            keyword = call_args[1]  # {'wait': 5.0} if keyword
 
             # Accept either positional or keyword form.
             if len(positional) >= 3:
@@ -90,9 +89,7 @@ class TestTryConnect:
         """try_connect always returns a bool, never str or None."""
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE):
             result = node.try_connect()
-        assert isinstance(result, bool), (
-            f"Expected bool, got {type(result).__name__}"
-        )
+        assert isinstance(result, bool), f"Expected bool, got {type(result).__name__}"
 
     @pytest.mark.happy_path
     def test_return_type_is_bool_on_failure(self, node):
@@ -108,6 +105,7 @@ class TestTryConnect:
         exception.  This is critical for robustness in connection retry loops.
         """
         import serial
+
         with patch(
             "rui3pylib.check_success",
             side_effect=serial.serialutil.PortNotOpenError,
@@ -125,6 +123,7 @@ class TestTryConnect:
         should reach the caller.
         """
         import serial
+
         with patch(
             "rui3pylib.check_success",
             side_effect=serial.serialutil.PortNotOpenError,
@@ -145,7 +144,9 @@ class TestTryConnect:
 
     @pytest.mark.happy_path
     def test_false_ok_flag_maps_to_false(self, node):
-        with patch("rui3pylib.check_success", return_value=("AT_BUSY_ERROR\r\n", False)):
+        with patch(
+            "rui3pylib.check_success", return_value=("AT_BUSY_ERROR\r\n", False)
+        ):
             assert node.try_connect() is False
 
 
@@ -153,8 +154,8 @@ class TestTryConnect:
 # AT+SPREADINGFACTOR=? — legacy P2P spreading factor getter
 # ===========================================================================
 
-class TestGetP2pSpreadFactor:
 
+class TestGetP2pSpreadFactor:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_sends_correct_query(self, node):
@@ -179,8 +180,8 @@ class TestGetP2pSpreadFactor:
 # AT+CODINGRATE=? — legacy P2P coding rate getter
 # ===========================================================================
 
-class TestGetP2pCodingRate:
 
+class TestGetP2pCodingRate:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_sends_correct_query(self, node):
@@ -205,8 +206,8 @@ class TestGetP2pCodingRate:
 # AT+PREAMBLELENGTH=? — legacy P2P preamble length getter
 # ===========================================================================
 
-class TestGetP2pPreambleLength2:
 
+class TestGetP2pPreambleLength2:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_sends_correct_query(self, node):
@@ -231,8 +232,8 @@ class TestGetP2pPreambleLength2:
 # AT+SYMBOLTIMEOUT=? — legacy P2P symbol timeout getter
 # ===========================================================================
 
-class TestGetP2pSymbolTimeout:
 
+class TestGetP2pSymbolTimeout:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_sends_correct_query(self, node):

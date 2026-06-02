@@ -21,13 +21,15 @@ from conftest import OK_RESPONSE, ERR_PARAM
 # AT+LOCK — lock serial port
 # ===========================================================================
 
-class TestLockSerial:
 
+class TestLockSerial:
     @pytest.mark.cmd_format
     def test_uses_send_command_not_check_success(self, node):
         """AT+LOCK does not wait for OK; send_command is used directly."""
-        with patch("rui3pylib.send_command") as m_send, \
-             patch("rui3pylib.check_success") as m_check:
+        with (
+            patch("rui3pylib.send_command") as m_send,
+            patch("rui3pylib.check_success") as m_check,
+        ):
             node.lock_serial()
             m_send.assert_called_once_with(node, "AT+LOCK")
             m_check.assert_not_called()
@@ -43,8 +45,8 @@ class TestLockSerial:
 # AT+PWORD — set serial port password
 # ===========================================================================
 
-class TestSetPassword:
 
+class TestSetPassword:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     def test_sends_correct_command(self, node):
@@ -109,8 +111,8 @@ class TestSetPassword:
 # AT+BAUD — serial baud rate
 # ===========================================================================
 
-class TestBaudRate:
 
+class TestBaudRate:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
@@ -146,8 +148,8 @@ class TestBaudRate:
 # AT+ATM — switch to AT command mode
 # ===========================================================================
 
-class TestSwitchToAtMode:
 
+class TestSwitchToAtMode:
     @pytest.mark.cmd_format
     def test_sends_correct_command(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:

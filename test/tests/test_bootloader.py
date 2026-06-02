@@ -32,14 +32,16 @@ VERSION_RESPONSE = "RUI_BOOT_0.6_STM32WLE5CC\r\n"
 # AT+BOOT — enter bootloader mode
 # ===========================================================================
 
-class TestSetBootMode:
 
+class TestSetBootMode:
     @pytest.mark.cmd_format
     @pytest.mark.bootloader
     def test_uses_send_command_not_check_success(self, node):
         """AT+BOOT does not return OK; send_command is used directly."""
-        with patch("rui3pylib.send_command", return_value=BOOT_RESPONSE) as m_send, \
-             patch("rui3pylib.check_success") as m_check:
+        with (
+            patch("rui3pylib.send_command", return_value=BOOT_RESPONSE) as m_send,
+            patch("rui3pylib.check_success") as m_check,
+        ):
             node.set_boot_mode()
             m_send.assert_called_once_with(node, "AT+BOOT")
             m_check.assert_not_called()
@@ -62,13 +64,15 @@ class TestSetBootMode:
 # AT+VERSION — bootloader version (boot mode only)
 # ===========================================================================
 
-class TestGetBootloaderVer:
 
+class TestGetBootloaderVer:
     @pytest.mark.cmd_format
     @pytest.mark.bootloader
     def test_uses_send_command_not_check_success(self, node):
-        with patch("rui3pylib.send_command", return_value=VERSION_RESPONSE) as m_send, \
-             patch("rui3pylib.check_success") as m_check:
+        with (
+            patch("rui3pylib.send_command", return_value=VERSION_RESPONSE) as m_send,
+            patch("rui3pylib.check_success") as m_check,
+        ):
             node.get_bootloader_ver()
             m_send.assert_called_once_with(node, "AT+VERSION")
             m_check.assert_not_called()
@@ -85,8 +89,8 @@ class TestGetBootloaderVer:
 # AT+BOOTSTATUS — bootloader status (boot mode only)
 # ===========================================================================
 
-class TestGetBootloaderStatus:
 
+class TestGetBootloaderStatus:
     @pytest.mark.cmd_format
     @pytest.mark.bootloader
     def test_sends_at_bootstatus(self, node):
@@ -106,8 +110,8 @@ class TestGetBootloaderStatus:
 # AT+RUN — exit boot mode (boot mode only)
 # ===========================================================================
 
-class TestAtRun:
 
+class TestAtRun:
     @pytest.mark.cmd_format
     @pytest.mark.bootloader
     def test_sends_at_run(self, node):
@@ -127,8 +131,8 @@ class TestAtRun:
 # AT+RESET — device reset from boot mode (boot mode only)
 # ===========================================================================
 
-class TestBootReset:
 
+class TestBootReset:
     @pytest.mark.cmd_format
     @pytest.mark.bootloader
     def test_sends_at_reset(self, node):
@@ -141,8 +145,8 @@ class TestBootReset:
 # AT+UPDATE — start Y-Modem receive (boot mode only)
 # ===========================================================================
 
-class TestBootUpdate:
 
+class TestBootUpdate:
     @pytest.mark.cmd_format
     @pytest.mark.bootloader
     def test_sends_at_update(self, node):

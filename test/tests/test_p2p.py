@@ -57,16 +57,16 @@ from conftest import OK_RESPONSE, ERR_PARAM, ERR_BUSY
 # Valid test vectors
 VALID_KEY_32 = "01020304050607080102030405060708"
 VALID_KEY_16 = "0011223344556677"
-VALID_IV_32  = "00112233445566770011223344556677"
-VALID_SYNC   = "1424"
+VALID_IV_32 = "00112233445566770011223344556677"
+VALID_SYNC = "1424"
 
 
 # ===========================================================================
 # AT+NWM — LoRa network work mode (0=P2P, 1=LoRaWAN, 2=FSK)
 # ===========================================================================
 
-class TestLoraNetworkMode:
 
+class TestLoraNetworkMode:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_sends_correct_query(self, node):
@@ -77,11 +77,14 @@ class TestLoraNetworkMode:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     @pytest.mark.p2p
-    @pytest.mark.parametrize("mode,cmd", [
-        (0, "AT+NWM=0"),
-        (1, "AT+NWM=1"),
-        (2, "AT+NWM=2"),
-    ])
+    @pytest.mark.parametrize(
+        "mode,cmd",
+        [
+            (0, "AT+NWM=0"),
+            (1, "AT+NWM=1"),
+            (2, "AT+NWM=2"),
+        ],
+    )
     def test_set_valid_modes(self, node, mode, cmd):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
             node.set_lora_network_mode(mode)
@@ -106,8 +109,8 @@ class TestLoraNetworkMode:
 # AT+PFREQ — P2P frequency (no library-side range guard)
 # ===========================================================================
 
-class TestP2pFreq:
 
+class TestP2pFreq:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_sends_correct_query(self, node):
@@ -134,8 +137,8 @@ class TestP2pFreq:
 # AT+PSF — P2P spreading factor (5-12)
 # ===========================================================================
 
-class TestP2pSpreadFactor:
 
+class TestP2pSpreadFactor:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_sends_correct_query(self, node):
@@ -173,8 +176,8 @@ class TestP2pSpreadFactor:
 # AT+PBW — P2P bandwidth index (0-9)
 # ===========================================================================
 
-class TestP2pBandwidth:
 
+class TestP2pBandwidth:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_sends_correct_query(self, node):
@@ -184,7 +187,7 @@ class TestP2pBandwidth:
 
     @pytest.mark.boundary
     @pytest.mark.p2p
-    @pytest.mark.parametrize("bw", range(10))   # 0-9
+    @pytest.mark.parametrize("bw", range(10))  # 0-9
     def test_all_valid_bw_indexes_accepted(self, node, bw):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
             result = node.set_p2p_band(bw)
@@ -212,8 +215,8 @@ class TestP2pBandwidth:
 # AT+PCR — P2P code rate (0-3)
 # ===========================================================================
 
-class TestP2pCodeRate:
 
+class TestP2pCodeRate:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_sends_correct_query(self, node):
@@ -223,9 +226,9 @@ class TestP2pCodeRate:
 
     @pytest.mark.boundary
     @pytest.mark.p2p
-    @pytest.mark.parametrize("cr,label", [
-        (0, "4/5"), (1, "4/6"), (2, "4/7"), (3, "4/8")
-    ])
+    @pytest.mark.parametrize(
+        "cr,label", [(0, "4/5"), (1, "4/6"), (2, "4/7"), (3, "4/8")]
+    )
     def test_all_valid_code_rates_accepted(self, node, cr, label):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
             result = node.set_p2p_code_rate(cr)
@@ -253,8 +256,8 @@ class TestP2pCodeRate:
 # AT+PPL — P2P preamble length (5-65535)
 # ===========================================================================
 
-class TestP2pPreambleLength:
 
+class TestP2pPreambleLength:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_sends_correct_query(self, node):
@@ -296,8 +299,8 @@ class TestP2pPreambleLength:
 # AT+PTP — P2P TX power (5-22 dBm)
 # ===========================================================================
 
-class TestP2pTxPower:
 
+class TestP2pTxPower:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_sends_correct_query(self, node):
@@ -338,8 +341,8 @@ class TestP2pTxPower:
 # AT+PBR — P2P FSK bitrate (600-300000 bps)
 # ===========================================================================
 
-class TestP2pFskBitrate:
 
+class TestP2pFskBitrate:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_sends_correct_query(self, node):
@@ -380,8 +383,8 @@ class TestP2pFskBitrate:
 # AT+PFDEV — P2P FSK frequency deviation (600-200000 Hz)
 # ===========================================================================
 
-class TestP2pFreqDeviation:
 
+class TestP2pFreqDeviation:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_sends_correct_query(self, node):
@@ -422,8 +425,8 @@ class TestP2pFreqDeviation:
 # AT+PSEND — P2P send
 # ===========================================================================
 
-class TestP2pSend:
 
+class TestP2pSend:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     @pytest.mark.p2p
@@ -474,8 +477,8 @@ class TestP2pSend:
 # AT+CAD — P2P Channel Activity Detection
 # ===========================================================================
 
-class TestP2pChannelActivity:
 
+class TestP2pChannelActivity:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_sends_correct_query(self, node):
@@ -502,8 +505,8 @@ class TestP2pChannelActivity:
 # AT+PRECV — P2P receive window
 # ===========================================================================
 
-class TestP2pReceive:
 
+class TestP2pReceive:
     @pytest.mark.happy_path
     @pytest.mark.cmd_format
     @pytest.mark.p2p
@@ -514,19 +517,24 @@ class TestP2pReceive:
 
     @pytest.mark.happy_path
     @pytest.mark.p2p
-    @pytest.mark.parametrize("timeout,description", [
-        (0,     "stop RX / switch to TX"),
-        (1,     "minimum timed window"),
-        (65532, "maximum timed window"),
-        (65533, "continuous RX, TX allowed"),
-        (65534, "continuous RX, no TX"),
-        (65535, "RX until one packet received"),
-    ])
+    @pytest.mark.parametrize(
+        "timeout,description",
+        [
+            (0, "stop RX / switch to TX"),
+            (1, "minimum timed window"),
+            (65532, "maximum timed window"),
+            (65533, "continuous RX, TX allowed"),
+            (65534, "continuous RX, no TX"),
+            (65535, "RX until one packet received"),
+        ],
+    )
     def test_all_special_timeout_values_accepted(self, node, timeout, description):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
             result = node.p2p_receive(timeout)
             m.assert_called_once_with(node, f"AT+PRECV={timeout}")
-            assert result is not None, f"Timeout {timeout} ({description}) should be valid"
+            assert result is not None, (
+                f"Timeout {timeout} ({description}) should be valid"
+            )
 
     @pytest.mark.boundary
     @pytest.mark.validation
@@ -556,8 +564,8 @@ class TestP2pReceive:
 # AT+ENCRY / AT+ENCKEY — P2P encryption on/off + key
 # ===========================================================================
 
-class TestP2pEncryption:
 
+class TestP2pEncryption:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_status_query(self, node):
@@ -622,8 +630,8 @@ class TestP2pEncryption:
 # AT+PCRYPT / AT+PKEY — P2P crypt status + 8-byte key
 # ===========================================================================
 
-class TestP2pCryptStatus:
 
+class TestP2pCryptStatus:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_status_query(self, node):
@@ -681,8 +689,8 @@ class TestP2pCryptStatus:
 # AT+CRYPIV — P2P initialisation vector (32 hex chars / 16 bytes)
 # ===========================================================================
 
-class TestP2pCryptIv:
 
+class TestP2pCryptIv:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_query(self, node):
@@ -726,8 +734,8 @@ class TestP2pCryptIv:
 # AT+P2P — set all P2P params at once
 # ===========================================================================
 
-class TestP2pParams:
 
+class TestP2pParams:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_sends_correct_query(self, node):
@@ -742,8 +750,12 @@ class TestP2pParams:
         """All valid parameters → correct AT+P2P=freq:sf:bw:cr:preamble:power."""
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
             node.set_p2p_params(
-                freq=868000000, sf=7, bandwidth=0,
-                code_rate=0, preamble_len=8, tx_power=14
+                freq=868000000,
+                sf=7,
+                bandwidth=0,
+                code_rate=0,
+                preamble_len=8,
+                tx_power=14,
             )
             m.assert_called_once_with(node, "AT+P2P=868000000:7:0:0:8:14")
 
@@ -767,7 +779,7 @@ class TestP2pParams:
         """
         expected = "AT+P2P=868000000:7:0:0:8:14"
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
-            result = node.set_p2p_params()   # all defaults
+            result = node.set_p2p_params()  # all defaults
             m.assert_called_once_with(node, expected)
             assert result is not None, (
                 "set_p2p_params() with default args returned None — "
@@ -842,14 +854,20 @@ class TestP2pParams:
     @pytest.mark.p2p
     def test_minimum_preamble_2_accepted(self, node):
         with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
-            assert node.set_p2p_params(868000000, sf=7, bandwidth=0, preamble_len=2) is not None
+            assert (
+                node.set_p2p_params(868000000, sf=7, bandwidth=0, preamble_len=2)
+                is not None
+            )
 
     @pytest.mark.boundary
     @pytest.mark.validation
     @pytest.mark.p2p
     def test_preamble_1_rejected(self, node):
         with patch("rui3pylib.check_success") as m:
-            assert node.set_p2p_params(868000000, sf=7, bandwidth=0, preamble_len=1) is None
+            assert (
+                node.set_p2p_params(868000000, sf=7, bandwidth=0, preamble_len=1)
+                is None
+            )
             m.assert_not_called()
 
     # ── tx_power range ───────────────────────────────────────────────────────
@@ -867,7 +885,9 @@ class TestP2pParams:
     @pytest.mark.p2p
     def test_tx_power_23_rejected(self, node):
         with patch("rui3pylib.check_success") as m:
-            assert node.set_p2p_params(868000000, sf=7, bandwidth=0, tx_power=23) is None
+            assert (
+                node.set_p2p_params(868000000, sf=7, bandwidth=0, tx_power=23) is None
+            )
             m.assert_not_called()
 
 
@@ -875,8 +895,8 @@ class TestP2pParams:
 # AT+IQINVER — P2P IQ inversion
 # ===========================================================================
 
-class TestP2pIqInversion:
 
+class TestP2pIqInversion:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_query(self, node):
@@ -903,8 +923,8 @@ class TestP2pIqInversion:
 # AT+SYNCWORD — P2P sync word (4 hex chars / 2 bytes)
 # ===========================================================================
 
-class TestP2pSyncword:
 
+class TestP2pSyncword:
     @pytest.mark.cmd_format
     @pytest.mark.p2p
     def test_get_query(self, node):
@@ -950,8 +970,8 @@ class TestP2pSyncword:
 # AT+FIXLENGTHPAYLOAD)
 # ===========================================================================
 
-class TestP2pLegacyCommands:
 
+class TestP2pLegacyCommands:
     # AT+RFFREQUENCY ─────────────────────────────────────────────────────────
 
     @pytest.mark.cmd_format

@@ -23,6 +23,7 @@ from conftest import OK_RESPONSE, ERR_PARAM
 
 # ── shared helpers ──────────────────────────────────────────────────────────
 
+
 def _ok(node, method_name: str, *args, expected_cmd: str) -> None:
     """Assert that method sends the expected command and returns non-None."""
     with patch("rui3pylib.check_success", return_value=OK_RESPONSE) as m:
@@ -41,6 +42,7 @@ def _fail(node, method_name: str, *args) -> None:
 # ===========================================================================
 # AT — ping
 # ===========================================================================
+
 
 class TestPing:
     @pytest.mark.cmd_format
@@ -61,6 +63,7 @@ class TestPing:
 # AT? — short help
 # ===========================================================================
 
+
 class TestAtHelp:
     @pytest.mark.cmd_format
     def test_sends_at_question_mark(self, node):
@@ -74,6 +77,7 @@ class TestAtHelp:
 # ===========================================================================
 # ATE — echo toggle
 # ===========================================================================
+
 
 class TestToggleCommandEcho:
     @pytest.mark.cmd_format
@@ -89,12 +93,15 @@ class TestToggleCommandEcho:
 # ATZ — MCU reset
 # ===========================================================================
 
+
 class TestReset:
     @pytest.mark.cmd_format
     def test_uses_send_command_not_check_success(self, node):
         """ATZ does not return OK; send_command is used directly."""
-        with patch("rui3pylib.send_command") as m_send, \
-             patch("rui3pylib.check_success") as m_check:
+        with (
+            patch("rui3pylib.send_command") as m_send,
+            patch("rui3pylib.check_success") as m_check,
+        ):
             node.reset()
             m_send.assert_called_once_with(node, "ATZ")
             m_check.assert_not_called()
@@ -110,6 +117,7 @@ class TestReset:
 # ATR — restore defaults
 # ===========================================================================
 
+
 class TestRestoreDefault:
     @pytest.mark.cmd_format
     def test_sends_atr(self, node):
@@ -123,6 +131,7 @@ class TestRestoreDefault:
 # ===========================================================================
 # AT+SN — serial number (read-only)
 # ===========================================================================
+
 
 class TestGetSerialNumber:
     @pytest.mark.cmd_format
@@ -138,6 +147,7 @@ class TestGetSerialNumber:
 # AT+BAT — battery level (read-only)
 # ===========================================================================
 
+
 class TestGetBatteryLevel:
     @pytest.mark.cmd_format
     def test_sends_correct_query(self, node):
@@ -152,6 +162,7 @@ class TestGetBatteryLevel:
 # AT+BUILDTIME (read-only)
 # ===========================================================================
 
+
 class TestGetBuildTime:
     @pytest.mark.cmd_format
     def test_sends_correct_query(self, node):
@@ -161,6 +172,7 @@ class TestGetBuildTime:
 # ===========================================================================
 # AT+REPOINFO (read-only)
 # ===========================================================================
+
 
 class TestGetRepoInfo:
     @pytest.mark.cmd_format
@@ -172,6 +184,7 @@ class TestGetRepoInfo:
 # AT+VER — firmware version (read-only)
 # ===========================================================================
 
+
 class TestGetFirmVersion:
     @pytest.mark.cmd_format
     def test_sends_correct_query(self, node):
@@ -181,6 +194,7 @@ class TestGetFirmVersion:
 # ===========================================================================
 # AT+CLIVER — AT command set version (read-only)
 # ===========================================================================
+
 
 class TestGetAtVersion:
     @pytest.mark.cmd_format
@@ -192,6 +206,7 @@ class TestGetAtVersion:
 # AT+APIVER — API version (read-only)
 # ===========================================================================
 
+
 class TestGetApiVersion:
     @pytest.mark.cmd_format
     def test_sends_correct_query(self, node):
@@ -201,6 +216,7 @@ class TestGetApiVersion:
 # ===========================================================================
 # AT+HWMODEL — hardware model string (read-only)
 # ===========================================================================
+
 
 class TestGetHwModel:
     @pytest.mark.cmd_format
@@ -212,6 +228,7 @@ class TestGetHwModel:
 # AT+HWID — hardware ID (read-only)
 # ===========================================================================
 
+
 class TestGetHwId:
     @pytest.mark.cmd_format
     def test_sends_correct_query(self, node):
@@ -222,8 +239,8 @@ class TestGetHwId:
 # AT+ALIAS — device alias (get + set)
 # ===========================================================================
 
-class TestDeviceAlias:
 
+class TestDeviceAlias:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         _ok(node, "get_device_alias", expected_cmd="AT+ALIAS=?")
@@ -276,6 +293,7 @@ class TestDeviceAlias:
 # AT+SYSV — system voltage (read-only)
 # ===========================================================================
 
+
 class TestGetSystemVoltage:
     @pytest.mark.cmd_format
     def test_sends_correct_query(self, node):
@@ -286,8 +304,8 @@ class TestGetSystemVoltage:
 # AT+BLEMAC — BLE MAC address (get + set)
 # ===========================================================================
 
-class TestBleMac:
 
+class TestBleMac:
     @pytest.mark.cmd_format
     def test_get_sends_correct_query(self, node):
         _ok(node, "get_ble_mac", expected_cmd="AT+BLEMAC=?")
@@ -359,6 +377,7 @@ class TestBleMac:
 # ===========================================================================
 # AT+BOOTVER — RUI bootloader version (read-only, normal mode)
 # ===========================================================================
+
 
 class TestGetBootVer:
     @pytest.mark.cmd_format
