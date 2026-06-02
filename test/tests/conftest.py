@@ -90,7 +90,7 @@ def node() -> lib.RUI3Node:
     next test or, when several accumulate, an ExceptionGroup FAILURE.
     """
     instance = object.__new__(lib.RUI3Node)
-    _serial.SerialBase.__init__(instance, port=None)   # ← replaces the manual _port assignment
+    lib.serial.SerialBase.__init__(instance, port=None)   # ← replaces the manual _port assignment
     return instance
 
 
