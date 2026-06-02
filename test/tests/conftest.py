@@ -76,31 +76,21 @@ def node() -> lib.RUI3Node:
     """
     Return a RUI3Node instance with all serial initialisation bypassed.
 
-    Root cause of the previous failure
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    RUI3Node inherits from serial.Serial.  The serial.Serial.port attribute
-    is a *property* whose setter calls self.is_open.  self.is_open is only
-    set during serial.Serial.__init__(); if __init__ is not called (as in
-    any subclass that overrides __init__ with a no-op), assigning to
-    self.port raises:
+    We use object.__new__ to skip RUI3Node.__init__ (which would call
+    serial.Serial.__init__ with a real port and try to open it).  We then
+    explicitly call serial.SerialBase.__init__(port=None) so that every
+    pyserial attribute — including is_open, portstr, _baudrate, _rtscts, etc. —
+    is properly initialised.  With port=None the final guard
+        if port is not None: self.open()
+    is never reached, so no real serial device is touched.
 
-        AttributeError: '_TestNode' object has no attribute 'is_open'
-
-    Fix
-    ~~~~
-    Use object.__new__(lib.RUI3Node) to allocate the instance without
-    invoking *any* __init__ (neither RUI3Node's nor serial.Serial's).
-    Then set the internal pyserial attribute self._port directly, bypassing
-    the property setter.  The property *getter* (used in log messages by
-    lock_serial()) simply returns self._port, so this works correctly.
-
-    All actual I/O is mocked per-test via patch("rui3pylib.check_success")
-    and patch("rui3pylib.send_command"), so no real serial state is needed.
+    serial.Serial.__repr__ accesses all of those attributes; without this call
+    any test teardown that triggers repr(node) raises an AttributeError inside
+    sys.unraisablehook, which pytest converts into either a setup ERROR on the
+    next test or, when several accumulate, an ExceptionGroup FAILURE.
     """
     instance = object.__new__(lib.RUI3Node)
-    # Set internal pyserial port attribute directly.
-    # serial.Serial.port (getter) returns self._port, so self.port == "MOCK_PORT".
-    instance._port = "MOCK_PORT"
+    _serial.SerialBase.__init__(instance, port=None)   # ← replaces the manual _port assignment
     return instance
 
 
