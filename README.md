@@ -1,7 +1,7 @@
 # RUI3_AT-lib
 
 
-This is a wrapper for the RUI3_AT API and was made strictly following the official [API documentation](https://docs.rakwireless.com/product-categories/software-apis-and-libraries/rui3/at-command-manual/)
+This is a wrapper for the RUI3_AT API and was made strictly following the official [API documentation](https://docs.rakwireless.com/product-categories/software-apis-and-libraries/rui3/at-command-manual/).
 
 It is used to test and create scripts for RUI3_AT compatible devices directly connected through a USB port.
 
