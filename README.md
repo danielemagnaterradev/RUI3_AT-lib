@@ -1,11 +1,13 @@
 # RUI3_AT-lib
 
 
-This is a wrapper for the RUI3_AT API and was made strictly following the official API documentation: https://docs.rakwireless.com/product-categories/software-apis-and-libraries/rui3/at-command-manual/
+This is a wrapper for the RUI3_AT API and was made strictly following the official [API documentation](https://docs.rakwireless.com/product-categories/software-apis-and-libraries/rui3/at-command-manual/).
 
-The docstrings inside the source code mimic quite precisely what is said in the documentation but, if you happen to have any doubts or there are some documentation clashes, always refer back to the official docs since they are the authorative source.
+It is used to test and create scripts for RUI3_AT compatible devices directly connected through a USB port.
 
-The library is built around node class (RUI3Node) which, when instantiated, will automatically find and connect to, when available, **ONE AND ONLY ONE** RUI3_AT compatible device. Trying to connect multiple devices at once will result in errors and/or undefined behaviour.
+The docstrings inside the source code mimic quite precisely what is said in the documentation but, if you happen to have any doubts or there are some documentation clashes, always refer back to the official docs since they are the authoritative source. The aforementioned docstrings were generated using LLMs, while the code is mostly handwritten.
+
+The library is built around the node class (RUI3Node) which, when instantiated, will automatically find and connect to, when available, **ONE AND ONLY ONE** RUI3_AT compatible device. Trying to connect multiple devices at once will result in errors and/or undefined behaviour.
 
 All the commands are wrapped inside methods for the RUI3Node class, with the names being as self-explanatory as possible.
 
