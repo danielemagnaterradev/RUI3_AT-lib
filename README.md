@@ -13,7 +13,9 @@ All the commands are wrapped inside methods for the RUI3Node class, with the nam
 
 Since the API error messages are very generic and unclear, most of the checking for the correctness of the values passed to the methods will be done inside the library, with more descriptive error messages.
 
-While the entirety of the API commands provided in the official documentation has been implemented, not all of them are compatible with all the devices. I suggest running the at_help() method first to verify which commands are available for you particular device, and which ones have read and/or write permissions.
+While the entirety of the API commands provided in the official documentation has been implemented, not all of them are compatible with all of the devices. I suggest running the at_help() method first to verify which commands are available for you particular device, and which ones have read and/or write permissions.
+
+If there are any commands that have not been implemented in the library, you can still write them directly to the device with the check_success(node, "<YOUR_COMMAND_HERE>") method. You can check whether your device has any non implemented commands with the at_help() method.
 
 I am in no way associated with RAK nor did I have any contact with them during the making of this library. This is entirely a personal project that I decided to publish.
 
