@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rui3pylib"
-version = "0.1.0"
+version = "0.1.1"
 description = "Python wrapper for the RUI3 AT command set (RAKwireless)"
 readme = "README.md"
 license = { file = "LICENSE" }

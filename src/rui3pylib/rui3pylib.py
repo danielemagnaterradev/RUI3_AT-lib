@@ -167,7 +167,7 @@ class RUI3Node(serial.Serial):
         if ok:
             return response
 
-    def reset(self) -> None:
+    def reboot(self) -> None:
         """ATZ — reset the module immediately.
 
         The module resets without returning an OK code, so send_command is
